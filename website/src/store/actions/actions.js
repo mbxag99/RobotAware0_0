@@ -1,20 +1,14 @@
+import { createRef, useRef } from "react";
 import { io } from "socket.io-client";
-
-import {
-  RTCPeerConnection,
-  RTCIceCandidate,
-  RTCSessionDescription,
-  RTCView,
-  MediaStream,
-  MediaStreamTrack,
-  mediaDevices,
-  registerGlobals,
-} from "react-native-webrtc";
 
 const API_URI = `http://10.0.0.16:3001/`;
 let socket = io(`${API_URI}`, { forceNew: true });
 socket.on("error", (error) => console.log(error + `socket error`));
 
+socket.on("connection-success", (success) => {
+  console.log(success);
+});
+// const pc_config = null
 let textref;
 let candidates = [];
 
@@ -25,7 +19,6 @@ const pc_config = {
     },
   ],*/
 };
-
 const pc = new RTCPeerConnection(pc_config);
 
 const sendToPeer = (messageType, payload) => {
@@ -53,7 +46,7 @@ const createOffer = () => {
 const createAnswer = () => {
   console.log("Answer");
   pc.createAnswer({ offerToReceiveVideo: 1 }).then((sdp) => {
-    console.log(JSON.stringify(sdp));
+    // console.log(JSON.stringify(sdp))
 
     // set answer sdp as local description
     pc.setLocalDescription(sdp);
@@ -82,19 +75,17 @@ const addCandidate = () => {
     pc.addIceCandidate(new RTCIceCandidate(candidate));
   });
 };
-export const start = (stream) => async (dispatch) => {
-  console.log("hhhi");
+/* ******************************************************************************* */
+export const start = (phoneSTREAM) => async (dispatch) => {
   socket.on("offerOrAnswer", (sdp) => {
-    console.log("received offer or answer");
-    console.log(sdp);
-    //textref.value = sdp;
-    console.log("steee");
+    //textref.value = JSON.stringify(sdp);
+
     // set sdp as remote description
     pc.setRemoteDescription(new RTCSessionDescription(sdp));
   });
 
   socket.on("candidate", (candidate) => {
-    console.log("From Peer... ", JSON.stringify(candidate));
+    // console.log('From Peer... ', JSON.stringify(candidate))
     // this.candidates = [...this.candidates, candidate]
     pc.addIceCandidate(new RTCIceCandidate(candidate));
   });
@@ -115,24 +106,18 @@ export const start = (stream) => async (dispatch) => {
   pc.ontrack = (e) => {
     console.log("STRREEAAAAM MOFO");
     //debugger;
-    // this.remoteVideoref.current.srcObject = e.streams[0];
-    dispatch({ type: "ADD_STREAM", payload: e.streams[0] });
+    /* remoteVideoref.current = new MediaStream();*/
+    //global.remoteVideoref.srcObject = e.streams[0];
+    console.log(e.streams[0]);
+    phoneSTREAM.current.srcObject = e.streams[0];
+    dispatch({ type: "ADD_STREAM" });
   };
-  for (const track of stream.getTracks()) {
-    pc.addTrack(track, [stream]);
-  }
-  console.log("added tracks");
-};
 
-export const accept = () => async (dispatch) => {
-  console.log(pc.signalingState);
-  if (pc.signalingState == "have-remote-offer") {
-    console.log("ACCEPT");
-    createAnswer();
-  }
+  createOffer();
+  //socket.emit("connection-request", compID);
 };
-/*
-let peerServer = new Peer(undefined, {
+/* ******************************************************************************* */
+/*let peerServer = new Peer(undefined, {
   host: "10.0.0.16",
   secure: false,
   port: 3001,
@@ -148,65 +133,49 @@ let peerServer = new Peer(undefined, {
     ],
   },
 });
+let compID;
 peerServer.on("open", (id) => {
   console.log(id + `hELL yEAH It works`);
-  userIIDD = id;
+  compID = id;
 });
 peerServer.on("error", (error) => console.log(error + "peer error"));
 
 let c = 0;*/
-/*const phonePeer = new SimplePeer({
-    initiator: true,
-    stream: stream,
-    wrtc: {
-      RTCPeerConnection,
-      RTCIceCandidate,
-      RTCSessionDescription,
-      RTCView,
-      MediaStream,
-      MediaStreamTrack,
-      mediaDevices,
-      registerGlobals,
-    },
+//socket.emit("message-to-phone", { value: "dadsas" });
+//peerServer.call();
+/* const compPeer = new SimplePeer({
+    initiator: false,
+    trickle: false,
   });
-  console.log("Potttsararda" + phonePeer);
-
-  phonePeer.on("signal", (data) => {
+  compPeer.on("signal", (data) => {
     console.log("SIGNAL", JSON.stringify(data));
   });
-  phonePeer.on("connect", () => {
+  compPeer.on("connect", () => {
     console.log("CONNECT");
-    phonePeer.send("whatever" + Math.random());
+    compPeer.send("whatever" + Math.random());
   });
 
-  phonePeer.on("data", (data) => {
+   compPeer.on("data", (data) => {
     console.log("data: " + data);
   });
-
-  phonePeer.signal("dsfdfd");
-
-  //socket.emit("message-from-phone", { value: "Hello from the phone" });
-  socket.on("computer-requesting-connection", (compID) => {
+  peerServer.on("call", (call) => {
     if (c == 0) {
-      if (stream != null) {
-        console.log(`calling the police ${compID}`);
-        console.log(`The stream is ${stream.toURL()}`);
-        let call = peerServer.call(compID);
-        call.addStream(stream);
-        call.on("close", () => {
-          console.log(`call closed`);
-        });
-        call.on("error", () => {
-          console.log(`call errored`);
-        });
-        console.log(`calinng ${call}`);
-        dispatch({ type: "CONNECTION_INITIATED" });
-      }
+      console.log(`call recieved ${call.localStream}`);
+      call.answer();
+      console.log(`the peer call.peer ${call.peer}`);
+      call.peerConnection.onaddstream = (e) => {
+        call.addStream(e.stream, call);
+      };
+      call.on("stream", (PhoneStream) => {
+        console.log(PhoneStream);
+        c = 8000;
+      });
+      call.on("close", () => {
+        console.log(`call closed`);
+      });
+      call.on("error", () => {
+        console.log(`call errored`);
+      });
       c++;
     }
-  });
-  console.log("adfadfsdfs");
-  /* socket.on("message-recieved-to-phone", (value) => {
-    console.log(`hey from phone recieved ${value.value}`);
-    dispatch({ type: "MSG_RECIEVED", payload: value.value });
   });*/

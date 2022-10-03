@@ -34,44 +34,40 @@ peerServer.on("disconnect", (e) => {
   console.log(`peer is closed disconnect ${e}`);
 });
 
+let connectedPeers = new Map();
 //socket io
 io.on("connection", (socket) => {
-  console.log("Someone connected");
-  socket.join(0);
-  socket.on("connection-request", (compID) => {
-    console.log(compID);
-    io.to(0).emit("computer-requesting-connection", compID);
-  });
-  /*  socket.on("message-to-phone", ({ value }) => {
-    console.log(value);
-    io.to(0).emit("message-recieved-to-phone", {
-      value: value,
-    });
-  });
-     socket.on("message-from-phone", ({ value }) => {
-    console.log(value);
-    io.to(0).emit("message-recieved-from-phone", {
-      value: value,
-    });
-  });
-  socket.on("user-disconnected", () => {
-    socket.leave(0);
-    if (isListen) removeUser(userId);
-    socket.to(0).emit("other-user-disconnected", userId);
-    io.to(0).emit("all-listeners", getRoomListeners(0));
-  });
+  console.log(socket.id);
+  socket.emit("connection-success", { success: socket.id });
+
+  connectedPeers.set(socket.id, socket);
 
   socket.on("disconnect", () => {
-    console.log(`${userName} just Disconnected`);
-    socket.leave(0);
-    if (isListen) removeUser(userId);
-    socket.to(0).emit("other-user-disconnected", userId);
-    io.to(0).emit("all-listeners", getRoomListeners(0));
+    console.log("one disconnected");
+    connectedPeers.delete(socket.id);
   });
 
-  socket.on("end", () => {
-    socket.disconnect(0);
-  });*/
+  socket.on("offerOrAnswer", (data) => {
+    // send to the other peer(s) if any
+    for (const [socketID, socket] of connectedPeers.entries()) {
+      // don't send to self
+      if (socketID !== data.socketID) {
+        console.log(socketID, data.payload.type);
+        socket.emit("offerOrAnswer", data.payload);
+      }
+    }
+  });
+
+  socket.on("candidate", (data) => {
+    // send candidate to the other peer(s) if any
+    for (const [socketID, socket] of connectedPeers.entries()) {
+      // don't send to self
+      if (socketID !== data.socketID) {
+        console.log(socketID, data.payload);
+        socket.emit("candidate", data.payload);
+      }
+    }
+  });
 });
 
 server.listen(port, () => console.log("API initiated"));

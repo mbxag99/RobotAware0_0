@@ -8,9 +8,17 @@ import {
   Paper,
 } from "@mui/material";
 import background from "./img/back.png";
-import { start } from "./actions/actions";
-//import { RTCView } from "react-native-web-webrtc";
+import { start } from "./store/actions/actions";
+import { useDispatch, useSelector } from "react-redux";
+import { useRef } from "react";
+import { createRef } from "react";
+
 function App() {
+  const dispatch = useDispatch();
+  const { phoneStream, phoneStreamLoading } = useSelector(
+    (state) => state.MediaReducer
+  );
+  const phoneSTREAM = createRef();
   return (
     <Container
       maxWidth="lg"
@@ -40,11 +48,22 @@ function App() {
           borderRadius: "10px",
         }}
         onClick={() => {
-          start();
+          dispatch(start(phoneSTREAM));
         }}
       >
         Start recording
       </Button>
+      <video
+        style={{
+          width: 300,
+          height: 300,
+          margin: 5,
+          backgroundColor: "black",
+        }}
+        ref={phoneSTREAM}
+        autoPlay
+        muted
+      ></video>
 
       {/* <RTCView
         streamURL={myStream.toURL()}

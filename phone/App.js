@@ -1,8 +1,14 @@
 import { StatusBar } from "expo-status-bar";
 import React, { useState, useEffect } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  Touchable,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Icon } from "@rneui/themed";
-import { start } from "./store/actions";
+import { accept, start } from "./store/actions";
 import { useDispatch, useSelector } from "react-redux";
 import { RTCView, mediaDevices } from "react-native-webrtc";
 
@@ -37,8 +43,8 @@ export default function App() {
             audio: true,
             video: {
               mandatory: {
-                minWidth: 200,
-                minHeight: 200,
+                minWidth: 300,
+                minHeight: 300,
                 minFrameRate: 30,
               },
               facingMode: isFront ? "user" : "environment",
@@ -67,7 +73,9 @@ export default function App() {
           { backgroundColor: connected ? "green" : "red" },
         ]}
       >
-        <Icon name="heartbeat" type="font-awesome" color="#280c00" />
+        <TouchableOpacity onPress={() => dispatch(accept())}>
+          <Icon name="heartbeat" type="font-awesome" color="#280c00" />
+        </TouchableOpacity>
         {isLoading ? null : <Text>{msg}</Text>}
 
         {/*   <RTCView streamURL={myStream.toURL()} style={styles.rtc} /><ImageBackground
