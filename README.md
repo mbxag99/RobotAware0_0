@@ -1,4 +1,2 @@
 # superP
-
-sahdiashdspaiuhdasiudhasidhsiudhaspiudhaspdiu
-sdasdsadasd
+hELLO pOTATO cHIPS
