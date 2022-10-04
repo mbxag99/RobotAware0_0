@@ -1,26 +1,18 @@
-import logo from "./logo.svg";
-import "./App.css";
-import {
-  Container,
-  Button,
-  Typography,
-  CircularProgress,
-  Paper,
-} from "@mui/material";
+import { Button, Container } from "@mui/material";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useRef, useState } from "react";
 import { createRef } from "react";
-import RecordingP from "./RecordingP.js";
-
+import { View} from "react-native";
+import { start } from "./store/actions/actions";
 let mediaRecorder;
 let recordedBlobs;
-
-function App() {
+export default function RecordingP() {
+  const [status, setStatus] = useState(true);
   const dispatch = useDispatch();
   const { _, __ } = useSelector((state) => state.MediaReducer);
   const phoneSTREAM = createRef();
-  const [st, setSt] = useState(false);
- /* const RecordMedia = () => {
+  const RecordMedia = () => {
+    dispatch(start(phoneSTREAM));
     recordedBlobs = [];
     //const mimeType =
     //codecPreferences.options[codecPreferences.selectedIndex].value;
@@ -63,11 +55,8 @@ function App() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     }, 100);
-  };*/
-
-  return st ? (
-    <RecordingP />
-  ) : (
+  };
+  return (
     <Container
       maxWidth="lg"
       style={{
@@ -80,32 +69,54 @@ function App() {
         flexDirection: "column",
       }}
     >
-      <Typography variant="h2" color={"whitesmoke"} fontFamily="Merriweather">
-        {" "}
-        Welcome to our magnificent project Autonomous car , Monocular and video
-        Odometry
-      </Typography>
-      <p></p>
-      <Button
-        size="large"
-        className="Rectangle"
-        variant="contained"
-        color="success"
+      <View style={{ flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginHorizontal: 5,
+        width:'40%',
+        }}>
+          <Button
+            size="large"
+            className="Rectangle"
+            variant="contained"
+            color={status ? "success" : "error"}
+            style={{
+              fontFamily: "Merriweather",
+              borderRadius: "10px",
+            }}
+            onClick={() => {
+              setStatus(!status);
+              status ? stopRecording():RecordMedia()
+            }}
+          >
+            {status ? "Start recording" : "Stop Recording"}
+          </Button>
+          <Button
+            size="large"
+            className="Rectangle"
+            variant="contained"
+            color={status ? "error" : "success"}
+            style={{
+              fontFamily: "Merriweather",
+              borderRadius: "10px",
+            }}
+            onClick={() => {
+              downloadRecordedVideo();
+            }}
+          >
+            Download Record
+          </Button>
+      </View>
+      <video
         style={{
-          fontFamily: "Merriweather",
-          borderRadius: "10px",
+          width: 500,
+          height: 500,
+          margin: 5,
+          backgroundColor: "black",
         }}
-        onClick={() => {
-          setSt(true);
-        }}
-        /*onClick={() => {
-          dispatch(start(phoneSTREAM));
-        }}*/
-      >
-        Start video
-      </Button>
+        ref={phoneSTREAM}
+        autoPlay
+        muted
+      ></video>
     </Container>
   );
 }
-
-export default App;
