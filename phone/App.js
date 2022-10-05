@@ -26,7 +26,7 @@ export default function App() {
 
   const myFUN = () => {
     try {
-      let isFront = false;
+      let isFront = true;
       mediaDevices.enumerateDevices().then((sourceInfos) => {
         let videoSourceId;
         for (let i = 0; i < sourceInfos.length; i++) {
