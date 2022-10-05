@@ -7,12 +7,10 @@ import {
   CircularProgress,
   Paper,
 } from "@mui/material";
-import background from "./img/back.png";
-import { start } from "./store/actions/actions";
 import { useDispatch, useSelector } from "react-redux";
 import { useRef, useState } from "react";
 import { createRef } from "react";
-import RecordingP from "./components/RecordingP.js";
+import RecordingP from "./RecordingP.js";
 
 let mediaRecorder;
 let recordedBlobs;
@@ -22,7 +20,7 @@ function App() {
   const { _, __ } = useSelector((state) => state.MediaReducer);
   const phoneSTREAM = createRef();
   const [st, setSt] = useState(false);
-  const RecordMedia = () => {
+ /* const RecordMedia = () => {
     recordedBlobs = [];
     mediaRecorder = new MediaRecorder(phoneSTREAM.current.srcObject);
     mediaRecorder.onstop = (event) => {
@@ -59,7 +57,7 @@ function App() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     }, 100);
-  };
+  };*/
 
   return st ? (
     <RecordingP />
@@ -92,73 +90,13 @@ function App() {
           borderRadius: "10px",
         }}
         onClick={() => {
-          dispatch(start(phoneSTREAM));
-        }}
-      >
-        Start video
-      </Button>
-      <Button
-        onClick={() => {
           setSt(true);
         }}
+        /*onClick={() => {
+          dispatch(start(phoneSTREAM));
+        }}*/
       >
-        TEST
-      </Button>
-      <video
-        style={{
-          width: 300,
-          height: 300,
-          margin: 5,
-          backgroundColor: "black",
-        }}
-        ref={phoneSTREAM}
-        autoPlay
-        muted
-      ></video>
-      <Button
-        size="large"
-        className="Rectangle"
-        variant="contained"
-        color="success"
-        style={{
-          fontFamily: "Merriweather",
-          borderRadius: "10px",
-        }}
-        onClick={() => {
-          RecordMedia();
-        }}
-      >
-        Start Record
-      </Button>
-      <Button
-        size="large"
-        className="Rectangle"
-        variant="contained"
-        color="success"
-        style={{
-          fontFamily: "Merriweather",
-          borderRadius: "10px",
-        }}
-        onClick={() => {
-          stopRecording();
-        }}
-      >
-        Stop Record
-      </Button>
-      <Button
-        size="large"
-        className="Rectangle"
-        variant="contained"
-        color="success"
-        style={{
-          fontFamily: "Merriweather",
-          borderRadius: "10px",
-        }}
-        onClick={() => {
-          downloadRecordedVideo();
-        }}
-      >
-        Download Record
+        Start video
       </Button>
     </Container>
   );

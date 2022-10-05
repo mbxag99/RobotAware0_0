@@ -11,7 +11,7 @@ import {
   registerGlobals,
 } from "react-native-webrtc";
 
-const API_URI = `http://192.168.1.5:3001/`;
+const API_URI = `http://10.0.0.62:3001/`;
 let socket = io(`${API_URI}`, { forceNew: true });
 socket.on("error", (error) => console.log(error + `socket error`));
 
