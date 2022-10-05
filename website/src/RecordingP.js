@@ -1,8 +1,8 @@
 import { Button, Container } from "@mui/material";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createRef } from "react";
-import { View} from "react-native";
+import { View } from "react-native";
 import { start } from "./store/actions/actions";
 let mediaRecorder;
 let recordedBlobs;
@@ -11,8 +11,11 @@ export default function RecordingP() {
   const dispatch = useDispatch();
   const { _, __ } = useSelector((state) => state.MediaReducer);
   const phoneSTREAM = createRef();
-  const RecordMedia = () => {
+  useEffect(() => {
     dispatch(start(phoneSTREAM));
+  }, []);
+  const RecordMedia = () => {
+    //dispatch(start(phoneSTREAM));
     recordedBlobs = [];
     //const mimeType =
     //codecPreferences.options[codecPreferences.selectedIndex].value;
@@ -69,42 +72,45 @@ export default function RecordingP() {
         flexDirection: "column",
       }}
     >
-      <View style={{ flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginHorizontal: 5,
-        width:'40%',
-        }}>
-          <Button
-            size="large"
-            className="Rectangle"
-            variant="contained"
-            color={status ? "success" : "error"}
-            style={{
-              fontFamily: "Merriweather",
-              borderRadius: "10px",
-            }}
-            onClick={() => {
-              setStatus(!status);
-              status ? stopRecording():RecordMedia()
-            }}
-          >
-            {status ? "Start recording" : "Stop Recording"}
-          </Button>
-          <Button
-            size="large"
-            className="Rectangle"
-            variant="contained"
-            color={status ? "error" : "success"}
-            style={{
-              fontFamily: "Merriweather",
-              borderRadius: "10px",
-            }}
-            onClick={() => {
-              downloadRecordedVideo();
-            }}
-          >
-            Download Record
-          </Button>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginHorizontal: 5,
+          width: "40%",
+        }}
+      >
+        <Button
+          size="large"
+          className="Rectangle"
+          variant="contained"
+          color={status ? "success" : "error"}
+          style={{
+            fontFamily: "Merriweather",
+            borderRadius: "10px",
+          }}
+          onClick={() => {
+            status ? RecordMedia() : stopRecording();
+            setStatus(!status);
+          }}
+        >
+          {status ? "Start recording" : "Stop Recording"}
+        </Button>
+        <Button
+          size="large"
+          className="Rectangle"
+          variant="contained"
+          color={status ? "error" : "success"}
+          style={{
+            fontFamily: "Merriweather",
+            borderRadius: "10px",
+          }}
+          onClick={() => {
+            downloadRecordedVideo();
+          }}
+        >
+          Download Record
+        </Button>
       </View>
       <video
         style={{
