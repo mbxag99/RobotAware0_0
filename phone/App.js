@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { Icon } from "@rneui/themed";
-import { accept, start } from "./store/actions";
+import { accept, bluetooth_connect, start } from "./store/actions";
 import { useDispatch, useSelector } from "react-redux";
 import { RTCView, mediaDevices } from "react-native-webrtc";
 
@@ -22,15 +22,17 @@ export default function App() {
 
   useEffect(() => {
     myFUN();
+    dispatch(bluetooth_connect());
   }, []);
 
   const myFUN = () => {
     try {
-      let isFront = true;
+      let isFront = false;
       mediaDevices.enumerateDevices().then((sourceInfos) => {
         let videoSourceId;
         for (let i = 0; i < sourceInfos.length; i++) {
           const sourceInfo = sourceInfos[i];
+          console.log(sourceInfo);
           if (
             sourceInfo.kind == "videoinput" &&
             sourceInfo.facing == (isFront ? "front" : "environment")
@@ -40,15 +42,15 @@ export default function App() {
         }
         mediaDevices
           .getUserMedia({
-            audio: true,
+            audio: false,
             video: {
+              deviceId: videoSourceId,
               mandatory: {
                 minWidth: 300,
                 minHeight: 300,
-                minFrameRate: 30,
               },
-              facingMode: isFront ? "user" : "environment",
-              optional: videoSourceId ? [{ sourceId: videoSourceId }] : [],
+              /* facingMode: isFront ? "user" : "environment",
+              optional: videoSourceId ? [{ sourceId: videoSourceId }] : [],*/
             },
           })
           .then((stream) => {
@@ -70,10 +72,15 @@ export default function App() {
       <View
         style={[
           styles.connection,
-          { backgroundColor: connected ? "green" : "red" },
+          { backgroundColor: status ? "green" : "red" },
         ]}
       >
-        <TouchableOpacity onPress={() => dispatch(accept())}>
+        <TouchableOpacity
+          onPress={() => {
+            dispatch(accept());
+            setStatus(true);
+          }}
+        >
           <Icon name="heartbeat" type="font-awesome" color="#280c00" />
         </TouchableOpacity>
         {isLoading ? null : <Text>{msg}</Text>}

@@ -11,12 +11,20 @@ import {
   registerGlobals,
 } from "react-native-webrtc";
 
-const API_URI = `http://192.168.1.133:3001/`;
+import { BleManager } from "react-native-ble-plx";
+
+const manager = new BleManager();
+manager.onStateChange((state) => {
+  console.log("state", state);
+  if (state === "PoweredOn") {
+    console.log("BLE is powered on");
+  }
+}, true);
+const API_URI = `http://10.0.0.16:3001/`;
 let socket = io(`${API_URI}`, { forceNew: true });
 socket.on("error", (error) => console.log(error + `socket error`));
 
 let textref;
-let candidates = [];
 
 const pc_config = {
   /*iceServers: [
@@ -32,21 +40,6 @@ const sendToPeer = (messageType, payload) => {
   socket.emit(messageType, {
     socketID: socket.id,
     payload,
-  });
-};
-
-const createOffer = () => {
-  console.log("Offer");
-
-  // https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/createOffer
-  // initiates the creation of SDP
-  pc.createOffer({ offerToReceiveVideo: 1 }).then((sdp) => {
-    // console.log(JSON.stringify(sdp))
-
-    // set offer sdp as local description
-    pc.setLocalDescription(sdp);
-
-    sendToPeer("offerOrAnswer", sdp);
   });
 };
 
@@ -69,19 +62,7 @@ const setRemoteDescription = () => {
   // set sdp as remote description
   pc.setRemoteDescription(new RTCSessionDescription(desc));
 };
-const addCandidate = () => {
-  // retrieve and parse the Candidate copied from the remote peer
-  // const candidate = JSON.parse(this.textref.value)
-  //console.log("Adding candidate:", candidate);
 
-  //add the candidate to the peer connection
-  //pc.addIceCandidate(new RTCIceCandidate(candidate));
-
-  candidates.forEach((candidate) => {
-    console.log(JSON.stringify(candidate));
-    pc.addIceCandidate(new RTCIceCandidate(candidate));
-  });
-};
 export const start = (stream) => async (dispatch) => {
   console.log("hhhi");
   socket.on("offerOrAnswer", (sdp) => {
@@ -95,7 +76,6 @@ export const start = (stream) => async (dispatch) => {
 
   socket.on("candidate", (candidate) => {
     console.log("From Peer... ", JSON.stringify(candidate));
-    // this.candidates = [...this.candidates, candidate]
     pc.addIceCandidate(new RTCIceCandidate(candidate));
   });
 
@@ -130,4 +110,37 @@ export const accept = () => async (dispatch) => {
     console.log("ACCEPT");
     createAnswer();
   }
+};
+
+export const bluetooth_connect = () => async (dispatch) => {
+  console.log("bluetooth_connect");
+  manager.startDeviceScan(null, null, (error, device) => {
+    if (error) {
+      console.log(error);
+      return;
+    }
+    console.log(device.localName);
+    if (device.name === "HC-06") {
+      manager.stopDeviceScan();
+      device
+        .connect()
+        .then((device) => {
+          return device.discoverAllServicesAndCharacteristics();
+        })
+        .then((device) => {
+          console.log(device);
+          console.log(device.services());
+          console.log(device.characteristics());
+          // Send a message that you want to send to the device
+          return device.writeCharacteristicWithResponseForService(
+            "0000ffe0-0000-1000-8000-00805f9b34fb", //"00001101-0000-1000-8000-00805F9B34FB"
+            "0000ffe1-0000-1000-8000-00805f9b34fb",
+            "Hello"
+          );
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    }
+  });
 };
