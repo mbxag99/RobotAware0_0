@@ -1,7 +1,7 @@
 import { createRef, useRef } from "react";
 import { io } from "socket.io-client";
 
-const API_URI = `http://10.0.0.16:3001/`;
+const API_URI = `http://192.168.1.5:3001/`;
 let socket = io(`${API_URI}`, { forceNew: true });
 socket.on("error", (error) => console.log(error + `socket error`));
 
@@ -110,6 +110,8 @@ export const start = (phoneSTREAM) => async (dispatch) => {
     //global.remoteVideoref.srcObject = e.streams[0];
     console.log(e.streams[0]);
     phoneSTREAM.current.srcObject = e.streams[0];
+    //download the incoming stream into the local machine
+    //download(e.streams[0], "remoteStream");
     dispatch({ type: "ADD_STREAM" });
   };
 

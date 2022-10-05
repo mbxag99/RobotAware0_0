@@ -24,13 +24,7 @@ function App() {
   const [st, setSt] = useState(false);
   const RecordMedia = () => {
     recordedBlobs = [];
-    //const mimeType =
-    //codecPreferences.options[codecPreferences.selectedIndex].value;
-    //const options = { mimeType };
-    mediaRecorder = new MediaRecorder(
-      phoneSTREAM.current.srcObject
-      //options
-    );
+    mediaRecorder = new MediaRecorder(phoneSTREAM.current.srcObject);
     mediaRecorder.onstop = (event) => {
       console.log("Recorder stopped: ", event);
       console.log("Recorded Blobs: ", recordedBlobs);
@@ -58,7 +52,7 @@ function App() {
     const a = document.createElement("a");
     a.style.display = "none";
     a.href = url;
-    a.download = "recorderVideo.webm";
+    a.download = "recordedVideo.webm";
     document.body.appendChild(a);
     a.click();
     setTimeout(() => {
