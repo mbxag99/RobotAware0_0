@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { Icon } from "@rneui/themed";
-import { accept, bluetooth_connect, start } from "./store/actions";
+import { accept, start } from "./store/actions";
 import { useDispatch, useSelector } from "react-redux";
 import { RTCView, mediaDevices } from "react-native-webrtc";
 
@@ -22,7 +22,6 @@ export default function App() {
 
   useEffect(() => {
     myFUN();
-    dispatch(bluetooth_connect());
   }, []);
 
   const myFUN = () => {

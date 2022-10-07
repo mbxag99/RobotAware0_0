@@ -11,7 +11,10 @@ import {
   registerGlobals,
 } from "react-native-webrtc";
 
-import { BleManager } from "react-native-ble-plx";
+/*import { BleManager } from "react-native-ble-plx";
+import RNBluetoothClassic, {
+  BluetoothDevice,
+} from "react-native-bluetooth-classic";
 
 const manager = new BleManager();
 manager.onStateChange((state) => {
@@ -19,7 +22,7 @@ manager.onStateChange((state) => {
   if (state === "PoweredOn") {
     console.log("BLE is powered on");
   }
-}, true);
+}, true);*/
 const API_URI = `http://10.0.0.16:3001/`;
 let socket = io(`${API_URI}`, { forceNew: true });
 socket.on("error", (error) => console.log(error + `socket error`));
@@ -112,16 +115,25 @@ export const accept = () => async (dispatch) => {
   }
 };
 
-export const bluetooth_connect = () => async (dispatch) => {
+/*export const bluetooth_connect = () => async (dispatch) => {
   console.log("bluetooth_connect");
+  try {
+    const available = await RNBluetoothClassic.getBondedDevices();
+    console.log(available + "Aavsdasdsdsadsadasdasd");
+  } catch (error) {
+    console.log(error);
+  }
+
   manager.startDeviceScan(null, null, (error, device) => {
     if (error) {
       console.log(error);
       return;
     }
+    console.log(device.name);
     console.log(device.localName);
-    if (device.name === "HC-06") {
+    if (device.name === "ourRobot") {
       manager.stopDeviceScan();
+      console.log(device);
       device
         .connect()
         .then((device) => {
@@ -143,4 +155,4 @@ export const bluetooth_connect = () => async (dispatch) => {
         });
     }
   });
-};
+};*/
