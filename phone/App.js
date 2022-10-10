@@ -8,12 +8,12 @@ import {
   View,
 } from "react-native";
 import { Icon } from "@rneui/themed";
-import { accept, start } from "./store/actions";
+import { accept, start, stopS } from "./store/actions";
 import { useDispatch, useSelector } from "react-redux";
 import { RTCView, mediaDevices } from "react-native-webrtc";
 
 export default function App() {
-  const [status, setStatus] = useState(false);
+  const [status, setStatus] = useState(0);
   const dispatch = useDispatch();
   const { msg, connected, isLoading } = useSelector(
     (state) => state.MessageReducer
@@ -21,10 +21,11 @@ export default function App() {
   //const [myStream, setMyStream] = useState(null);
 
   useEffect(() => {
-    myFUN();
+    myFUN(false);
   }, []);
 
-  const myFUN = () => {
+  const myFUN = (stopped) => {
+    console.log("myFUN " + stopped);
     try {
       let isFront = false;
       mediaDevices.enumerateDevices().then((sourceInfos) => {
@@ -54,7 +55,7 @@ export default function App() {
           })
           .then((stream) => {
             //     setMyStream(stream);
-            dispatch(start(stream));
+            dispatch(start(stream, setStatus, stopped));
           })
           .catch((error) => {
             console.log(error);
@@ -71,13 +72,23 @@ export default function App() {
       <View
         style={[
           styles.connection,
-          { backgroundColor: status ? "green" : "red" },
+          {
+            backgroundColor:
+              status == 2 ? "green" : status == 1 ? "red" : "grey",
+          },
         ]}
       >
         <TouchableOpacity
           onPress={() => {
-            dispatch(accept());
-            setStatus(true);
+            if (status != 0) {
+              if (status == 1) {
+                dispatch(accept());
+              }
+              setStatus((p) => (p == 2 ? 1 : 2));
+              if (status == 2) {
+                myFUN(true);
+              }
+            }
           }}
         >
           <Icon name="heartbeat" type="font-awesome" color="#280c00" />

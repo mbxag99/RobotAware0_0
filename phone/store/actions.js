@@ -23,7 +23,7 @@ manager.onStateChange((state) => {
     console.log("BLE is powered on");
   }
 }, true);*/
-const API_URI = `http://10.0.0.16:3001/`;
+const API_URI = `http://192.168.1.21:3001/`;
 let socket = io(`${API_URI}`, { forceNew: true });
 socket.on("error", (error) => console.log(error + `socket error`));
 
@@ -37,7 +37,7 @@ const pc_config = {
   ],*/
 };
 
-const pc = new RTCPeerConnection(pc_config);
+let pc = new RTCPeerConnection(pc_config);
 
 const sendToPeer = (messageType, payload) => {
   socket.emit(messageType, {
@@ -58,16 +58,14 @@ const createAnswer = () => {
   });
 };
 
-const setRemoteDescription = () => {
-  // retrieve and parse the SDP copied from the remote peer
-  const desc = JSON.parse(textref.value);
-
-  // set sdp as remote description
-  pc.setRemoteDescription(new RTCSessionDescription(desc));
-};
-
-export const start = (stream) => async (dispatch) => {
+export const start = (stream, setStatus, stopped) => async (dispatch) => {
   console.log("hhhi");
+  if (stopped) {
+    console.log("stop");
+    pc.close();
+    // reset to allow for new connections
+    pc = new RTCPeerConnection(pc_config);
+  }
   socket.on("offerOrAnswer", (sdp) => {
     console.log("received offer or answer");
     console.log(sdp);
@@ -80,6 +78,11 @@ export const start = (stream) => async (dispatch) => {
   socket.on("candidate", (candidate) => {
     console.log("From Peer... ", JSON.stringify(candidate));
     pc.addIceCandidate(new RTCIceCandidate(candidate));
+    setStatus(1);
+  });
+
+  socket.on("disconnected-boy", (data) => {
+    setStatus(0);
   });
 
   pc.onicecandidate = (e) => {
@@ -95,27 +98,30 @@ export const start = (stream) => async (dispatch) => {
     console.log(e);
   };
 
-  pc.ontrack = (e) => {
-    console.log("STRREEAAAAM MOFO");
-    //debugger;
-    // this.remoteVideoref.current.srcObject = e.streams[0];
-    dispatch({ type: "ADD_STREAM", payload: e.streams[0] });
-  };
   for (const track of stream.getTracks()) {
     pc.addTrack(track, [stream]);
   }
   console.log("added tracks");
+  if (stopped) socket.emit("buddy-phone-stop");
 };
 
 export const accept = () => async (dispatch) => {
-  console.log(pc.signalingState);
+  console.log(pc.signalingState + " sassy");
   if (pc.signalingState == "have-remote-offer") {
     console.log("ACCEPT");
     createAnswer();
   }
 };
 
-/*export const bluetooth_connect = () => async (dispatch) => {
+/*export const stopS = () => async (dispatch) => {
+  console.log("stop");
+  pc.close();
+  // reset to allow for new connections
+  pc = new RTCPeerConnection(pc_config);
+  socket.emit("buddy-phone-stop");
+};
+
+export const bluetooth_connect = () => async (dispatch) => {
   console.log("bluetooth_connect");
   try {
     const available = await RNBluetoothClassic.getBondedDevices();

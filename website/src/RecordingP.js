@@ -1,4 +1,4 @@
-import { Button, Container } from "@mui/material";
+import { Button, CircularProgress, Container, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createRef } from "react";
@@ -8,22 +8,17 @@ let mediaRecorder;
 let recordedBlobs;
 export default function RecordingP() {
   const [status, setStatus] = useState(true);
+  const [gotStream, setGotStream] = useState(false);
   const dispatch = useDispatch();
   const { _, __ } = useSelector((state) => state.MediaReducer);
   const phoneSTREAM = createRef();
   useEffect(() => {
-    dispatch(start(phoneSTREAM));
+    dispatch(start(phoneSTREAM, setGotStream));
   }, []);
+  // when we receive a stream
   const RecordMedia = () => {
-    //dispatch(start(phoneSTREAM));
     recordedBlobs = [];
-    //const mimeType =
-    //codecPreferences.options[codecPreferences.selectedIndex].value;
-    //const options = { mimeType };
-    mediaRecorder = new MediaRecorder(
-      phoneSTREAM.current.srcObject
-      //options
-    );
+    mediaRecorder = new MediaRecorder(phoneSTREAM.current.srcObject);
     mediaRecorder.onstop = (event) => {
       console.log("Recorder stopped: ", event);
       console.log("Recorded Blobs: ", recordedBlobs);
@@ -72,57 +67,77 @@ export default function RecordingP() {
         flexDirection: "column",
       }}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          marginHorizontal: 5,
-          width: "40%",
-        }}
-      >
-        <Button
-          size="large"
-          className="Rectangle"
-          variant="contained"
-          color={status ? "success" : "error"}
+      {gotStream ? (
+        <View
           style={{
-            fontFamily: "Merriweather",
-            borderRadius: "10px",
-          }}
-          onClick={() => {
-            status ? RecordMedia() : stopRecording();
-            setStatus(!status);
+            flexDirection: "row",
+            justifyContent: "space-between",
+            //marginHorizontal: 5,
+            //width: "40%",
           }}
         >
-          {status ? "Start recording" : "Stop Recording"}
-        </Button>
-        <Button
-          size="large"
-          className="Rectangle"
-          variant="contained"
-          color={status ? "error" : "success"}
-          style={{
-            fontFamily: "Merriweather",
-            borderRadius: "10px",
-          }}
-          onClick={() => {
-            downloadRecordedVideo();
-          }}
-        >
-          Download Record
-        </Button>
-      </View>
+          <Button
+            size="large"
+            className="Rectangle"
+            variant="contained"
+            color={status ? "success" : "error"}
+            style={{
+              fontFamily: "Merriweather",
+              borderRadius: "10px",
+            }}
+            onClick={() => {
+              status ? RecordMedia() : stopRecording();
+              setStatus(!status);
+            }}
+          >
+            {status ? "Start recording" : "Stop Recording"}
+          </Button>
+          <Button
+            size="large"
+            className="Rectangle"
+            variant="contained"
+            color={status ? "error" : "success"}
+            style={{
+              fontFamily: "Merriweather",
+              borderRadius: "10px",
+            }}
+            onClick={() => {
+              downloadRecordedVideo();
+            }}
+          >
+            Download Record
+          </Button>
+        </View>
+      ) : null}
+      {console.log(phoneSTREAM)}
       <video
         style={{
           width: 500,
           height: 500,
           margin: 5,
           backgroundColor: "black",
+          //zIndex: 1,
         }}
         ref={phoneSTREAM}
         autoPlay
         muted
       ></video>
+      {!gotStream ? (
+        <>
+          <CircularProgress
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              marginTop: -12,
+              marginLeft: -12,
+            }}
+          />
+          <Typography variant="h6" style={{ color: "white" }}>
+            Waiting for a stream...
+          </Typography>
+        </>
+      ) : null}
     </Container>
   );
 }

@@ -20,7 +20,7 @@ function App() {
   const { _, __ } = useSelector((state) => state.MediaReducer);
   const phoneSTREAM = createRef();
   const [st, setSt] = useState(false);
- /* const RecordMedia = () => {
+  /* const RecordMedia = () => {
     recordedBlobs = [];
     mediaRecorder = new MediaRecorder(phoneSTREAM.current.srcObject);
     mediaRecorder.onstop = (event) => {
@@ -76,7 +76,7 @@ function App() {
     >
       <Typography variant="h2" color={"whitesmoke"} fontFamily="Merriweather">
         {" "}
-        Welcome to our magnificent project Autonomous car , Monocular and video
+        Welcome to our Final project Autonomous Vehcile , Monocular Visual
         Odometry
       </Typography>
       <p></p>
@@ -92,9 +92,6 @@ function App() {
         onClick={() => {
           setSt(true);
         }}
-        /*onClick={() => {
-          dispatch(start(phoneSTREAM));
-        }}*/
       >
         Start video
       </Button>

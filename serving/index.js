@@ -45,6 +45,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("one disconnected");
     connectedPeers.delete(socket.id);
+    io.emit("disconnected-boy", socket.id);
   });
 
   socket.on("offerOrAnswer", (data) => {
@@ -52,7 +53,7 @@ io.on("connection", (socket) => {
     for (const [socketID, socket] of connectedPeers.entries()) {
       // don't send to self
       if (socketID !== data.socketID) {
-        console.log(socketID, data.payload.type);
+        //console.log(socketID, data.payload.type);
         socket.emit("offerOrAnswer", data.payload);
       }
     }
@@ -63,10 +64,15 @@ io.on("connection", (socket) => {
     for (const [socketID, socket] of connectedPeers.entries()) {
       // don't send to self
       if (socketID !== data.socketID) {
-        console.log(socketID, data.payload);
+        //console.log(socketID, data.payload);
         socket.emit("candidate", data.payload);
       }
     }
+  });
+
+  socket.on("buddy-phone-stop", () => {
+    console.log("computer is ready");
+    io.emit("phone-stop");
   });
 });
 
