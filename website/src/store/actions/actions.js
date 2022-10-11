@@ -1,7 +1,7 @@
 import { createRef, useRef } from "react";
 import { io } from "socket.io-client";
 
-const API_URI = `http://192.168.1.21:3001/`;
+const API_URI = `http://10.0.0.16:3001/`;
 let socket = io(`${API_URI}`, { forceNew: true });
 let videoReff = null;
 socket.on("error", (error) => console.log(error + `socket error`));
@@ -95,3 +95,18 @@ export const start = (phoneSTREAM, setGotStream) => async (dispatch) => {
   addListeners(phoneSTREAM, setGotStream);
   createOffer();
 };
+
+export const call_analysis =
+  (response_ref, gotResponse) => async (dispatch) => {
+    try {
+      fetch("http://127.0.0.1:5000/video_feed")
+        .then((response) => {
+          console.log(response.json());
+        })
+        .then((data) => {
+          console.log(data);
+        });
+    } catch (error) {
+      console.log(error);
+    }
+  };

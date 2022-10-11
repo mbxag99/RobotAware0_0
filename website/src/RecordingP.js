@@ -3,21 +3,23 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createRef } from "react";
 import { View } from "react-native";
-import { start } from "./store/actions/actions";
+import { call_analysis, start } from "./store/actions/actions";
 let mediaRecorder;
-let recordedBlobs;
+let recordedBlobs = [];
 export default function RecordingP() {
   const [status, setStatus] = useState(true);
   const [gotStream, setGotStream] = useState(false);
+  const [gotResponse, setGotResponse] = useState(false);
   const dispatch = useDispatch();
   const { _, __ } = useSelector((state) => state.MediaReducer);
   const phoneSTREAM = createRef();
+  const response_ref = createRef();
   useEffect(() => {
     dispatch(start(phoneSTREAM, setGotStream));
   }, []);
   // when we receive a stream
   const RecordMedia = () => {
-    recordedBlobs = [];
+    //recordedBlobs = [];
     mediaRecorder = new MediaRecorder(phoneSTREAM.current.srcObject);
     mediaRecorder.onstop = (event) => {
       console.log("Recorder stopped: ", event);
@@ -31,6 +33,16 @@ export default function RecordingP() {
 
   const stopRecording = () => {
     mediaRecorder.stop();
+    var data = new FormData();
+    data.append(
+      "video",
+      new Blob(recordedBlobs, { type: "video/webm" }),
+      "video"
+    );
+    fetch("http://127.0.0.1:5000/video_feed", {
+      method: "POST",
+      body: data,
+    });
   };
 
   const handleDataAvailable = (event) => {
@@ -64,7 +76,7 @@ export default function RecordingP() {
         justifyContent: "center",
         alignItems: "center",
         alightContent: "center",
-        flexDirection: "column",
+        flexDirection: "row",
       }}
     >
       {gotStream ? (
@@ -109,7 +121,6 @@ export default function RecordingP() {
           </Button>
         </View>
       ) : null}
-      {console.log(phoneSTREAM)}
       <video
         style={{
           width: 500,
@@ -122,6 +133,11 @@ export default function RecordingP() {
         autoPlay
         muted
       ></video>
+      {/*<img
+        src="http://127.0.0.1:5000/video_feed"
+        width="500px"
+        height="500px"
+      />*/}
       {!gotStream ? (
         <>
           <CircularProgress
