@@ -39,6 +39,11 @@ export default function RecordingP() {
       new Blob(recordedBlobs, { type: "video/webm" }),
       "video"
     );
+    const obj = { hello: "world" };
+    const blob = new Blob([JSON.stringify(obj, null, 2)], {
+      type: "application/json",
+    });
+    data.append("pot", blob, "pot");
     fetch("http://127.0.0.1:5000/video_feed", {
       method: "POST",
       body: data,
@@ -76,7 +81,7 @@ export default function RecordingP() {
         justifyContent: "center",
         alignItems: "center",
         alightContent: "center",
-        flexDirection: "row",
+        flexDirection: "column",
       }}
     >
       {gotStream ? (
@@ -133,11 +138,11 @@ export default function RecordingP() {
         autoPlay
         muted
       ></video>
-      {/*<img
+      <img
         src="http://127.0.0.1:5000/video_feed"
         width="500px"
         height="500px"
-      />*/}
+      />
       {!gotStream ? (
         <>
           <CircularProgress

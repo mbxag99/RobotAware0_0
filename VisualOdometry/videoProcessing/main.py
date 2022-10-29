@@ -1,11 +1,16 @@
+import io
+import os
 from flask import Flask,render_template, Response , request
 from flask_cors import CORS
 from wand.image import Image 
 import matplotlib.pyplot as plt
 import cv2
 import numpy as np
+import base64
+
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 1000 * 1024 * 1024 # 
 CORS(app)
 
 orb = cv2.ORB_create()
@@ -36,26 +41,29 @@ if __name__ == "__main__":
 def index():
     return render_template('index.html')
 
-@app.route('/video_feed', methods=['POST'])
+@app.route('/video_feed', methods=['POST','GET'])
 def video_feed():
+    
+    '''''
     print("video feed")
-    return Response(get_frames(request.files['video']), mimetype='multipart/x-mixed-replace; boundary=frame')   
+    wtf = request.files['video']
+    print(wtf)
+    print(wtf.stream)
+    print(wtf.stream.read())
+    if os.path.isfile('C:/Users/windows 10/Desktop/superP/VisualOdometry/videoProcessing/out.webm'):#C:/Users/windows 10/Desktop/superP/VisualOdometry/videoProcessing
+      os.remove('C:/Users/windows 10/Desktop/superP/VisualOdometry/videoProcessing/out.webm')
+    with open('C:/Users/windows 10/Desktop/superP/VisualOdometry/videoProcessing/out.webm', 'wb') as f:
+        f.write(wtf.stream.read())
+    '''''
+    return Response(get_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')   
 
-def get_frames(video):
+def get_frames():
         # video is a Binary Large Object (BLOB) that contains the video file
         # video is a file-like object
         # so to allow cv2 to read the video, we need to convert it to a numpy array
         # then we can use cv2 to read the video
-        try:
-            with Image(blob = video) as img:
-                # get height of image
-                print('height =', img.height)
-            
-                # get width of image
-                print('width =', img.width)
-            ourVideo = cv2.VideoCapture(video)
-        except:
-            print("Error reading video") 
+        ourVideo = cv2.VideoCapture('ourVideo.mp4')
+
         prevFrame = None
         if ourVideo.isOpened():
             W = int((ourVideo.get(cv2.CAP_PROP_FRAME_WIDTH))/2)
