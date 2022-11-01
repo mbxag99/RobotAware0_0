@@ -43,9 +43,8 @@ def index():
 
 @app.route('/video_feed', methods=['POST','GET'])
 def video_feed():
-    
-    '''''
     print("video feed")
+    ''''
     wtf = request.files['video']
     print(wtf)
     print(wtf.stream)
@@ -54,7 +53,7 @@ def video_feed():
       os.remove('C:/Users/windows 10/Desktop/superP/VisualOdometry/videoProcessing/out.webm')
     with open('C:/Users/windows 10/Desktop/superP/VisualOdometry/videoProcessing/out.webm', 'wb') as f:
         f.write(wtf.stream.read())
-    '''''
+    '''
     return Response(get_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')   
 
 def get_frames():
@@ -62,6 +61,7 @@ def get_frames():
         # video is a file-like object
         # so to allow cv2 to read the video, we need to convert it to a numpy array
         # then we can use cv2 to read the video
+        print("get frames")
         ourVideo = cv2.VideoCapture('ourVideo.mp4')
 
         prevFrame = None
