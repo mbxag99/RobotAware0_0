@@ -34,7 +34,8 @@ def get_pose(pts,K,E):
 
         # Decompose the Essential matrix into R and t
         R, t = decomp_essential_mat(E, K, pts)
-
+        if np.linalg.norm(t) > 50:
+            return None
         # Get transformation matrix
         transformation_matrix = _form_transf(R, np.squeeze(t))
         #print(transformation_matrix)
