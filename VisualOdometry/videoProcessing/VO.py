@@ -34,7 +34,7 @@ def get_pose(pts,K,E):
 
         # Decompose the Essential matrix into R and t
         R, t = decomp_essential_mat(E, K, pts)
-        if np.linalg.norm(t) > 50:
+        if np.linalg.norm(t) > 80:
             return None
         # Get transformation matrix
         transformation_matrix = _form_transf(R, np.squeeze(t))
@@ -110,9 +110,9 @@ def decomp_essential_mat(E,K, pts):
             # Un-homogenize
             Q1 = hom_Q1[:3, :] / hom_Q1[3, :]
             Q2 = hom_Q2[:3, :] / hom_Q2[3, :]
-            print(Q1)
+           # print(Q1)
             total_sum = sum(Q2[2, :] > 0) + sum(Q1[2, :] > 0) # T
-            print(total_sum)
+           # print(total_sum)
             relative_scale = np.mean(np.linalg.norm(Q1.T[:-1] - Q1.T[1:], axis=-1)/
                                      np.linalg.norm(Q2.T[:-1] - Q2.T[1:], axis=-1))
             positives.append(total_sum + relative_scale)
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     if cap.isOpened():
       W = int((cap.get(cv2.CAP_PROP_FRAME_WIDTH))/2)#1920/2
       H = int((cap.get(cv2.CAP_PROP_FRAME_HEIGHT))/2)#1080/2
-      #Kk = np.array([[96.4,0,3.87933415e+02],[0,96.4,8.11926095e+02],[0,0,1]]) 
+      Kk = np.array([[96.4,0,W//2],[0,96.4,H//2],[0,0,1]]) #96.4
       K = np.array([
     [1.22276742e+03,0.00000000e+00,3.87933415e+02],
     [0.00000000e+00,1.21655279e+03,8.11926095e+02],
@@ -194,7 +194,7 @@ if __name__ == "__main__":
 
     cap.release()
 
-number_of_frames = 20
+number_of_frames = 50
 image_size = np.array([960, 540])
 #image_size = np.array([1920, 1080])
 
@@ -203,14 +203,17 @@ plt.figure()
 ax = plt.axes(projection='3d')
 
 camera_pose_poses = np.array(camera_pose_list)
+print(camera_pose_poses)
 
-
-key_frames_indices = np.linspace(0, len(camera_pose_poses) - 1, number_of_frames, dtype=int)
-colors = cycle("rgb")
-
-for i, c in zip(key_frames_indices, colors):
+key_frames_indices = np.linspace(0, len(camera_pose_poses) - 1, dtype=int)#, number_of_frames,
+#colors = cycle("rgb")
+shade = 1
+for i in key_frames_indices:
+    ## color gets darker as the camera moves away from the origin
     pc.plot_camera(ax, K, camera_pose_poses[i],
-                   sensor_size=image_size, c=c)
+                   sensor_size=image_size, c=shade * np.array([1., 0., 0.]))
+    shade *= 0.95
+                   
 
 
 plt.show()
@@ -222,3 +225,4 @@ estimated_path = np.array(estimated_path[::take_every_th_camera_pose])
 plt.plot(estimated_path[:,0],estimated_path[:,1])
 plt.show()
 
+## hello 
