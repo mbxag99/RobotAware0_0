@@ -34,7 +34,7 @@ def get_pose(pts,K,E):
 
         # Decompose the Essential matrix into R and t
         R, t = decomp_essential_mat(E, K, pts)
-        if np.linalg.norm(t) > 80:
+        if np.linalg.norm(t) > 80: ##************ 80/50 threshold
             return None
         # Get transformation matrix
         transformation_matrix = _form_transf(R, np.squeeze(t))
@@ -88,7 +88,7 @@ def _form_transf(R, t):
         return T
 
 def decomp_essential_mat(E,K, pts):
-        R1, R2, t = cv2.decomposeEssentialMat(E)
+        R1, R2, t = cv2.decomposeEssentialMat(E) 
         T1 = _form_transf(R1,np.ndarray.flatten(t))
         T2 = _form_transf(R2,np.ndarray.flatten(t))
         T3 = _form_transf(R1,np.ndarray.flatten(-t))
@@ -104,6 +104,17 @@ def decomp_essential_mat(E,K, pts):
         projections = [K_hom @ T1, K_hom @ T2, K_hom @ T3, K_hom @ T4]
 
         positives = []
+        # Decompose the Essential matrix using built in OpenCV function
+        # Form the 4 possible transformation matrix T from R1, R2, and t
+        # Create projection matrix using each T, and triangulate points hom_Q1
+        # Transform hom_Q1 to second camera using T to create hom_Q2
+        # Count how many points in hom_Q1 and hom_Q2 with positive z value
+        # Return R and t pair which resulted in the most points with positive z
+        # we need z to be positive because we are looking at the camera from the origin so when we move forward z increases
+        # and when we move backwards z decreases
+        # so a better way to to check how we are moving is to check the relative scale of the points
+        # so we calculate the relative scale of the points and add it to the total sum
+        # the one with the highest total sum is the correct one
         for P, T in zip(projections, transformations):
             hom_Q1 = cv2.triangulatePoints(P, P, pts[:,0].T, pts[:,1].T)
             hom_Q2 = T @ hom_Q1
@@ -111,18 +122,30 @@ def decomp_essential_mat(E,K, pts):
             Q1 = hom_Q1[:3, :] / hom_Q1[3, :]
             Q2 = hom_Q2[:3, :] / hom_Q2[3, :]
            # print(Q1)
-            total_sum = sum(Q2[2, :] > 0) + sum(Q1[2, :] > 0) # T
+
+           # calculate the relative scale of the points
+           # we will calculate the relative scale of the points by calculating the distance between the points
+            # and the distance between the points in the previous frame
+            # we will then calculate the ratio of the two distances
+            # we will then add the ratio to the total sum
+            # the one with the highest total sum is the correct one
+            ################# this appears to affect accuracy a lot
+            total_sum = 0 ##************ 1st Opt
+            for i in range(len(Q1[0])): 
+                #print(Q1[0][i],Q1[1][i],Q1[2][i])
+                #print(Q2[0][i],Q2[1][i],Q2[2][i])
+                dist1 = np.sqrt(Q1[0][i]**2 + Q1[1][i]**2 + Q1[2][i]**2)
+                dist2 = np.sqrt(Q2[0][i]**2 + Q2[1][i]**2 + Q2[2][i]**2)
+                ratio = dist1/dist2
+                total_sum += ratio
+            positives.append(total_sum)
+            '''total_sum = sum(Q2[2, :] > 0) + sum(Q1[2, :] > 0) ##************ 2ndOpt
            # print(total_sum)
             relative_scale = np.mean(np.linalg.norm(Q1.T[:-1] - Q1.T[1:], axis=-1)/
                                      np.linalg.norm(Q2.T[:-1] - Q2.T[1:], axis=-1))
-            positives.append(total_sum + relative_scale)
+            positives.append(total_sum + relative_scale)'''
             
-        # Decompose the Essential matrix using built in OpenCV function
-        # Form the 4 possible transformation matrix T from R1, R2, and t
-        # Create projection matrix using each T, and triangulate points hom_Q1
-        # Transform hom_Q1 to second camera using T to create hom_Q2
-        # Count how many points in hom_Q1 and hom_Q2 with positive z value
-        # Return R and t pair which resulted in the most points with positive z
+
 
         max = np.argmax(positives)
         if (max == 2):
