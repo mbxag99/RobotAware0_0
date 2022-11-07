@@ -169,7 +169,7 @@ def create_video(filename, width, height, fps=30):
 
 
 if __name__ == "__main__":
-    cap = cv2.VideoCapture('test09.mp4')
+    cap = cv2.VideoCapture('test007.mp4')
     if cap.isOpened():
       W = int((cap.get(cv2.CAP_PROP_FRAME_WIDTH))/2)#1920/2
       H = int((cap.get(cv2.CAP_PROP_FRAME_HEIGHT))/2)#1080/2
@@ -179,6 +179,10 @@ if __name__ == "__main__":
     [0.00000000e+00,1.21655279e+03,8.11926095e+02],
     [0.00000000e+00,0.00000000e+00,1.00000000e+00]
     ])
+      herK = np.array(
+        [[5.85527058e+03,0.00000000e+00,5.06012858e+02],
+        [0.00000000e+00,6.24699335e+03,9.50412545e+02],
+        [0.00000000e+00,0.00000000e+00,1.00000000e+00]])
       Kinv = np.linalg.inv(K)
       print(W,H)
     frames = []
