@@ -14,10 +14,6 @@ from cycler import cycle
 
 orb = cv2.ORB_create()
 
-class Frame:
-    def __init__(self):
-        self.pose = None
-    
 
 def add_ones(x):
     return np.concatenate([x, np.ones((x.shape[0], 1))], axis=1)
@@ -32,37 +28,25 @@ def denormalize(pt,K): # Back to original
     #print(ret)
     return int(round(ret[0])),int(round(ret[1])) 
 
-def get_pose(pts,K):
+def get_pose(pts,K,E):
         # Essential matrix
-        E, mask = cv2.findEssentialMat(pts[:,0], pts[:,1], K)
+        #E, mask = cv2.findEssentialMat(pts[:,0], pts[:,1], K)
 
         # Decompose the Essential matrix into R and t
         R, t = decomp_essential_mat(E, K, pts)
-
+        if np.linalg.norm(t) > 80: ##************ 80/50 threshold
+            return None
         # Get transformation matrix
         transformation_matrix = _form_transf(R, np.squeeze(t))
-        print(transformation_matrix)
+        #print(transformation_matrix)
         return transformation_matrix
 
-def get_Rotation_translation(E):
-    u,w,vt = np.linalg.svd(E)
-    print(w)
-    W = np.array([[0,-1,0],[1,0,0],[0,0,1]])
-    assert np.linalg.det(u) > 0
-    if np.linalg.det(vt) < 0:
-        vt *= -1
-    R = np.dot(np.dot(u,W),vt)
-    if np.sum(R.diagonal()) < 0:
-        R = np.dot(np.dot(u,W.T),vt) 
-    t = u[:,2] 
-    Rt = np.concatenate((R,t.reshape(3,1)),axis=1)
-    return Rt # Rotation matrix and translation vector
 
 def extract_frame(img,prevFrame,K,Kinv):
     feats = cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8), 1000, qualityLevel=0.01, minDistance=3)
     kps = [cv2.KeyPoint(x=f[0][0], y=f[0][1], size=20) for f in feats]
     kps, des = orb.compute(img, kps)
-    Rt = None
+    transf = None
     # draw features
     for p in kps:
      cv2.circle(img, (int(p.pt[0]), int(p.pt[1])), 2, (0, 255, 0), 1)
@@ -84,7 +68,7 @@ def extract_frame(img,prevFrame,K,Kinv):
                                  min_samples=8,
                                  residual_threshold=0.001,
                                  max_trials=50)
-          Rt = get_pose(good[inliers],K)     
+          transf = get_pose(good[inliers],K,model.params)     
           #threeD_Points(good[inliers],Rt,prevRt)                
           for m in good[inliers]:
             u1,v1 = denormalize(m[0],K)
@@ -94,7 +78,7 @@ def extract_frame(img,prevFrame,K,Kinv):
     cv2.imshow('img', img)
     cv2.waitKey(1) 
     #out.write(img)
-    return prevFrame, Rt
+    return prevFrame, transf
 
 def _form_transf(R, t):
         T = np.eye(4, dtype=np.float64)
@@ -104,8 +88,7 @@ def _form_transf(R, t):
         return T
 
 def decomp_essential_mat(E,K, pts):
-
-        R1, R2, t = cv2.decomposeEssentialMat(E)
+        R1, R2, t = cv2.decomposeEssentialMat(E) 
         T1 = _form_transf(R1,np.ndarray.flatten(t))
         T2 = _form_transf(R2,np.ndarray.flatten(t))
         T3 = _form_transf(R1,np.ndarray.flatten(-t))
@@ -114,51 +97,69 @@ def decomp_essential_mat(E,K, pts):
         
         # Homogenize K
         K_hom = np.concatenate((K, np.zeros((3,1)) ), axis = 1)
+        #print(K)
+        #print(K_hom)
 
         # List of projections
         projections = [K_hom @ T1, K_hom @ T2, K_hom @ T3, K_hom @ T4]
 
-        np.set_printoptions(suppress=True)
-
-        # print("\nTransform 1\n" +  str(T1))
-        # print("\nTransform 2\n" +  str(T2))
-        # print("\nTransform 3\n" +  str(T3))
-        # print("\nTransform 4\n" +  str(T4))
-
         positives = []
-        for P, T in zip(projections, transformations):
-            hom_Q1 = cv2.triangulatePoints(P, P, pts[:,0].T, pts[:,1].T)
-            hom_Q2 = T @ hom_Q1
-            # Un-homogenize
-            Q1 = hom_Q1[:3, :] / hom_Q1[3, :]
-            Q2 = hom_Q2[:3, :] / hom_Q2[3, :]
-    
-            total_sum = sum(Q2[2, :] > 0) + sum(Q1[2, :] > 0)
-            relative_scale = np.mean(np.linalg.norm(Q1.T[:-1] - Q1.T[1:], axis=-1)/
-                                     np.linalg.norm(Q2.T[:-1] - Q2.T[1:], axis=-1))
-            positives.append(total_sum + relative_scale)
-            
-
         # Decompose the Essential matrix using built in OpenCV function
         # Form the 4 possible transformation matrix T from R1, R2, and t
         # Create projection matrix using each T, and triangulate points hom_Q1
         # Transform hom_Q1 to second camera using T to create hom_Q2
         # Count how many points in hom_Q1 and hom_Q2 with positive z value
         # Return R and t pair which resulted in the most points with positive z
+        # we need z to be positive because we are looking at the camera from the origin so when we move forward z increases
+        # and when we move backwards z decreases
+        # so a better way to to check how we are moving is to check the relative scale of the points
+        # so we calculate the relative scale of the points and add it to the total sum
+        # the one with the highest total sum is the correct one
+        for P, T in zip(projections, transformations):
+            hom_Q1 = cv2.triangulatePoints(P, P, pts[:,0].T, pts[:,1].T)
+            hom_Q2 = T @ hom_Q1
+            # Un-homogenize
+            Q1 = hom_Q1[:3, :] / hom_Q1[3, :]
+            Q2 = hom_Q2[:3, :] / hom_Q2[3, :]
+           # print(Q1)
+
+           # calculate the relative scale of the points
+           # we will calculate the relative scale of the points by calculating the distance between the points
+            # and the distance between the points in the previous frame
+            # we will then calculate the ratio of the two distances
+            # we will then add the ratio to the total sum
+            # the one with the highest total sum is the correct one
+            ################# this appears to affect accuracy a lot
+            total_sum = 0 ##************ 1st Opt
+            for i in range(len(Q1[0])): 
+                #print(Q1[0][i],Q1[1][i],Q1[2][i])
+                #print(Q2[0][i],Q2[1][i],Q2[2][i])
+                dist1 = np.sqrt(Q1[0][i]**2 + Q1[1][i]**2 + Q1[2][i]**2)
+                dist2 = np.sqrt(Q2[0][i]**2 + Q2[1][i]**2 + Q2[2][i]**2)
+                ratio = dist1/dist2
+                total_sum += ratio
+            positives.append(total_sum)
+            '''total_sum = sum(Q2[2, :] > 0) + sum(Q1[2, :] > 0) ##************ 2ndOpt
+           # print(total_sum)
+            relative_scale = np.mean(np.linalg.norm(Q1.T[:-1] - Q1.T[1:], axis=-1)/
+                                     np.linalg.norm(Q2.T[:-1] - Q2.T[1:], axis=-1))
+            positives.append(total_sum + relative_scale)'''
+            
+
 
         max = np.argmax(positives)
         if (max == 2):
             # print(-t)
-            return R1, np.ndarray.flatten(-t)
+            return R1, np.ndarray.flatten(-t) 
         elif (max == 3):
             # print(-t)
-            return R2, np.ndarray.flatten(-t)
+            return R2, np.ndarray.flatten(-t) 
         elif (max == 0):
             # print(t)
-            return R1, np.ndarray.flatten(t)
+            return R1, np.ndarray.flatten(t) 
         elif (max == 1):
             # print(t)
-            return R2, np.ndarray.flatten(t)
+            return R2, np.ndarray.flatten(t) 
 
 
 def create_video(filename, width, height, fps=30):
@@ -168,40 +169,87 @@ def create_video(filename, width, height, fps=30):
 
 
 if __name__ == "__main__":
-    cap = cv2.VideoCapture('Wtest.mp4')
+    cap = cv2.VideoCapture('test007.mp4')
     if cap.isOpened():
-      W = int((cap.get(cv2.CAP_PROP_FRAME_WIDTH)))#1920/2
-      H = int((cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))#1080/2
-      Kk = np.array([[806.74,0,W/2],[0,1925.77,H/2],[0,0,1]]) 
+      W = int((cap.get(cv2.CAP_PROP_FRAME_WIDTH))/2)#1920/2
+      H = int((cap.get(cv2.CAP_PROP_FRAME_HEIGHT))/2)#1080/2
+      Kk = np.array([[96.4,0,W//2],[0,96.4,H//2],[0,0,1]]) #96.4
       K = np.array([
     [1.22276742e+03,0.00000000e+00,3.87933415e+02],
     [0.00000000e+00,1.21655279e+03,8.11926095e+02],
     [0.00000000e+00,0.00000000e+00,1.00000000e+00]
     ])
+      herK = np.array(
+        [[5.85527058e+03,0.00000000e+00,5.06012858e+02],
+        [0.00000000e+00,6.24699335e+03,9.50412545e+02],
+        [0.00000000e+00,0.00000000e+00,1.00000000e+00]])
       Kinv = np.linalg.inv(K)
       print(W,H)
     frames = []
     prevFrame = None
     prevRt = None
+    
+    gt_path = []
+    estimated_path = []
+    camera_pose_list = []
+    start_pose = np.ones((3,4))
+    start_translation = np.zeros((3,1))
+    start_rotation = np.identity(3)
+    start_pose = np.concatenate((start_rotation, start_translation), axis=1)
+    cur_pose = start_pose
+    frame_count = 0
+    transf = None
     #out = create_video('pop.mp4',W,H)
     while cap.isOpened():
         ret, frame = cap.read()
-        if ret:
+        frame_count += 1
+        if ret :
             img = cv2.resize(frame, (W, H))
             #frames.append(img)
-            prevFrame, prevRt =  extract_frame(img,prevFrame,K,Kinv)
-        else:
-            break
-    '''
-    np.random.seed(3)
-    fig = plt.figure(figsize=(9, 6))
-    ax = plt.axes(projection='3d')
-    y = np.random.random(100)
-    x = np.random.random(100)
-    z = np.random.random(100)
-    ax.scatter3D(x, y, z, color='red')
-    ax.set_title("3D scatterplot", pad=25, size=15)
-    ax.set_xlabel("X") 
-    ax.set_ylabel("Y") 
-    ax.set_zlabel("Z")
-    '''
+            prevFrame, transf =  extract_frame(img,prevFrame,K,Kinv)
+            if transf is not None:
+              cur_pose = cur_pose @ transf 
+        
+              hom_array = np.array([[0,0,0,1]])
+              hom_camera_pose = np.concatenate((cur_pose,hom_array), axis=0)
+              camera_pose_list.append(hom_camera_pose)
+              estimated_path.append((cur_pose[0, 3], cur_pose[2, 3]))
+              estimated_camera_pose_x, estimated_camera_pose_y = cur_pose[0, 3], cur_pose[2, 3]
+              print("Estimated camera pose: ({}, {})".format(estimated_camera_pose_x, estimated_camera_pose_y))
+        if cv2.waitKey(25) & 0xFF == ord('q'):
+          break
+
+    cap.release()
+
+number_of_frames = 50
+image_size = np.array([960, 540])
+#image_size = np.array([1920, 1080])
+
+plt.figure()
+#ax = pt.plot_transform()
+ax = plt.axes(projection='3d')
+
+camera_pose_poses = np.array(camera_pose_list)
+print(camera_pose_poses)
+
+key_frames_indices = np.linspace(0, len(camera_pose_poses) - 1, dtype=int)#, number_of_frames,
+#colors = cycle("rgb")
+shade = 1
+for i in key_frames_indices:
+    ## color gets darker as the camera moves away from the origin
+    pc.plot_camera(ax, K, camera_pose_poses[i],
+                   sensor_size=image_size, c=shade * np.array([1., 0., 0.]))
+    shade *= 0.95
+                   
+
+
+plt.show()
+
+take_every_th_camera_pose = 10
+
+estimated_path = np.array(estimated_path[::take_every_th_camera_pose])
+
+plt.plot(estimated_path[:,0],estimated_path[:,1])
+plt.show()
+
+## hello 
