@@ -48,6 +48,7 @@ export default function RecordingP() {
       method: "POST",
       body: data,
     });
+    setGotResponse(true);
   };
 
   const handleDataAvailable = (event) => {
@@ -126,23 +127,37 @@ export default function RecordingP() {
           </Button>
         </View>
       ) : null}
-      <video
+      <Container
         style={{
-          width: 500,
-          height: 500,
-          margin: 5,
-          backgroundColor: "black",
-          //zIndex: 1,
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          alightContent: "center",
+          flexDirection: "row",
         }}
-        ref={phoneSTREAM}
-        autoPlay
-        muted
-      ></video>
-      <img
-        src="http://127.0.0.1:5000/video_feed"
-        width="500px"
-        height="500px"
-      />
+      >
+        <video
+          style={{
+            width: 500,
+            height: 500,
+            margin: 5,
+            backgroundColor: "black",
+            //zIndex: 1,
+          }}
+          ref={phoneSTREAM}
+          autoPlay
+          muted
+        ></video>
+        {gotResponse ? (
+          <img
+            src="http://127.0.0.1:5000/video_feed"
+            width="500px"
+            height="500px"
+          />
+        ) : null}
+      </Container>
       {!gotStream ? (
         <>
           <CircularProgress
