@@ -173,7 +173,7 @@ if __name__ == "__main__":
     if cap.isOpened():
       W = int((cap.get(cv2.CAP_PROP_FRAME_WIDTH)))#1920/2
       H = int((cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))#1080/2
-      Kk = np.array([[96.4,0,W//2],[0,96.4,H//2],[0,0,1]]) #96.4
+      carK = np.array([[96.4,0,W//2],[0,96.4,H//2],[0,0,1]]) #96.4
       myK = np.array([
     [1.22276742e+03,0.00000000e+00,3.87933415e+02],
     [0.00000000e+00,1.21655279e+03,8.11926095e+02],
@@ -182,7 +182,12 @@ if __name__ == "__main__":
       K = np.array(
         [[5.85527058e+03,0.00000000e+00,5.06012858e+02],
         [0.00000000e+00,6.24699335e+03,9.50412545e+02],
-        [0.00000000e+00,0.00000000e+00,1.00000000e+00]])
+        [0.00000000e+00,0.00000000e+00,1.00000000e+00]]) # Weaam K
+
+      iphoneK  = np.array(
+        [[1.00000000e+03,0.00000000e+00,5.00000000e+02],
+        [0.00000000e+00,1.00000000e+03,5.00000000e+02],
+        [0.00000000e+00,0.00000000e+00,1.00000000e+00]]) ## Iphone K
       Kinv = np.linalg.inv(K)
       print(W,H)
     frames = []
@@ -202,7 +207,7 @@ if __name__ == "__main__":
     #out = create_video('pop.mp4',W,H)
     while cap.isOpened():
         ret, frame = cap.read()
-        if ret and frame_count % 10 == 0:
+        if ret and frame_count % 20 == 0:
             img = cv2.resize(frame, (W, H))
             #frames.append(img)
             prevFrame, transf =  extract_frame(img,prevFrame,K,Kinv)
@@ -228,6 +233,9 @@ image_size = np.array([960, 540])
 plt.figure()
 #ax = pt.plot_transform()
 ax = plt.axes(projection='3d')
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
 
 camera_pose_poses = np.array(camera_pose_list)
 print(camera_pose_poses)
