@@ -169,17 +169,17 @@ def create_video(filename, width, height, fps=30):
 
 
 if __name__ == "__main__":
-    cap = cv2.VideoCapture('test007.mp4')
+    cap = cv2.VideoCapture('Wtest.mp4')
     if cap.isOpened():
-      W = int((cap.get(cv2.CAP_PROP_FRAME_WIDTH))/2)#1920/2
-      H = int((cap.get(cv2.CAP_PROP_FRAME_HEIGHT))/2)#1080/2
+      W = int((cap.get(cv2.CAP_PROP_FRAME_WIDTH)))#1920/2
+      H = int((cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))#1080/2
       Kk = np.array([[96.4,0,W//2],[0,96.4,H//2],[0,0,1]]) #96.4
-      K = np.array([
+      myK = np.array([
     [1.22276742e+03,0.00000000e+00,3.87933415e+02],
     [0.00000000e+00,1.21655279e+03,8.11926095e+02],
     [0.00000000e+00,0.00000000e+00,1.00000000e+00]
     ])
-      herK = np.array(
+      K = np.array(
         [[5.85527058e+03,0.00000000e+00,5.06012858e+02],
         [0.00000000e+00,6.24699335e+03,9.50412545e+02],
         [0.00000000e+00,0.00000000e+00,1.00000000e+00]])
@@ -202,8 +202,7 @@ if __name__ == "__main__":
     #out = create_video('pop.mp4',W,H)
     while cap.isOpened():
         ret, frame = cap.read()
-        frame_count += 1
-        if ret :
+        if ret and frame_count % 10 == 0:
             img = cv2.resize(frame, (W, H))
             #frames.append(img)
             prevFrame, transf =  extract_frame(img,prevFrame,K,Kinv)
@@ -216,6 +215,7 @@ if __name__ == "__main__":
               estimated_path.append((cur_pose[0, 3], cur_pose[2, 3]))
               estimated_camera_pose_x, estimated_camera_pose_y = cur_pose[0, 3], cur_pose[2, 3]
               print("Estimated camera pose: ({}, {})".format(estimated_camera_pose_x, estimated_camera_pose_y))
+        frame_count += 1
         if cv2.waitKey(25) & 0xFF == ord('q'):
           break
 
