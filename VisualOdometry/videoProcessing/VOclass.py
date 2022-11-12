@@ -14,6 +14,7 @@ from frame import Frame
 from funcs import *
 
 
+
 class VisualOdometry:
     def __init__(self):
         # initialize
@@ -37,6 +38,8 @@ class VisualOdometry:
         self.P = self.K @ self.extrinsic
         self.orb = cv2.ORB_create(3000)
         self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING)
+        self.exposed_Img = None
+        self.can_expose = True
 
     def draw_2D(self):
         take_every_th_camera_pose = 2
@@ -81,6 +84,7 @@ class VisualOdometry:
             ret, frame = cap.read()
             if ret and frame_count % 5 == 0:
              img = cv2.resize(frame, (W, H))
+             self.can_expose = False
              transf = self.process(img)
              if transf is not None:
               self.cur_pose = self.cur_pose @ transf
@@ -97,12 +101,14 @@ class VisualOdometry:
               estimated_camera_pose_x, estimated_camera_pose_y, estimated_camera_pose_z = self.cur_pose[0, 3],self.cur_pose[1,3], self.cur_pose[2, 3]
               print("Estimated camera pose: ({},{},{})".format(estimated_camera_pose_x,estimated_camera_pose_y, estimated_camera_pose_z))
             frame_count += 1
+            # break when I type in the console 'q' or in the video window I press 'q'
             if cv2.waitKey(1) & 0xFF == ord('q'):
               break
         cap.release()
 
-        self.draw_3D()
-        self.draw_2D()
+        #self.draw_3D()
+        #self.draw_2D()
+        return
 
 
 
@@ -139,7 +145,9 @@ class VisualOdometry:
                 cv2.line(img , (u1,v1),(u2,v2),(255,0,0),1)
             print("Number of good matches: ", len(good[inliers]))
         self.prevFrame = Frame(kps, des, img)
-        cv2.imshow('img', img)
+        self.exposed_Img = img
+        self.can_expose = True
+        #cv2.imshow('img', img)
         cv2.waitKey(1) 
         return transf
 
@@ -223,7 +231,5 @@ class VisualOdometry:
         T[:3, 3] = t 
         return T
 
-
-if __name__ == '__main__':
-    VO = VisualOdometry()
-    VO.start_Processing()
+    def get_image(self):
+        return self.exposed_Img

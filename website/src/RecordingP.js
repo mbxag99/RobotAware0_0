@@ -14,6 +14,7 @@ export default function RecordingP() {
   const { _, __ } = useSelector((state) => state.MediaReducer);
   const phoneSTREAM = createRef();
   const response_ref = createRef();
+  const [boola, setBoola] = useState(true);
   useEffect(() => {
     dispatch(start(phoneSTREAM, setGotStream));
   }, []);
@@ -51,11 +52,13 @@ export default function RecordingP() {
     data.append("pot", blob, "pot");
     console.log("DATA ", data);
     // we will send the video to a flask server
-    fetch("http://127.0.0.1:5000/video_feed", {
+    fetch("http://127.0.0.1:5000/upload_vod", {
       method: "POST",
       body: data,
+    }).then((response) => {
+      console.log("Response: ", response);
+      setGotResponse(true);
     });
-    setGotResponse(true);
   };
 
   const handleDataAvailable = (event) => {
@@ -172,13 +175,17 @@ export default function RecordingP() {
           autoPlay
           muted
         ></video>
-        {gotResponse ? (
-          <img
-            src="http://127.0.0.1:5000/video_feed"
-            width="500px"
-            height="500px"
-          />
-        ) : null}
+        {gotResponse & boola // allow only once
+          ? (console.log(boola),
+            (
+              <img
+                src="http://127.0.0.1:5000/video_feed"
+                loading="eager" // load the image as soon as possible
+                width="500px"
+                height="500px"
+              />
+            ))
+          : null}
       </Container>
       {!gotStream ? (
         <>
