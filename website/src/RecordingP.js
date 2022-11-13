@@ -14,6 +14,7 @@ export default function RecordingP() {
   const { _, __ } = useSelector((state) => state.MediaReducer);
   const phoneSTREAM = createRef();
   const response_ref = createRef();
+  const [boola, setBoola] = useState(true);
   useEffect(() => {
     dispatch(start(phoneSTREAM, setGotStream));
   }, []);
@@ -23,32 +24,41 @@ export default function RecordingP() {
     mediaRecorder = new MediaRecorder(phoneSTREAM.current.srcObject);
     mediaRecorder.onstop = (event) => {
       console.log("Recorder stopped: ", event);
-      console.log("Recorded Blobs: ", recordedBlobs);
+      console.log("Media recorded state: ", mediaRecorder.state);
+      console.log("Recorded Blobs after stop: ", recordedBlobs);
+      //sendVideoToFlask(recordedBlobs[0]);
+      //console.log("Recorded Blobs: ", recordedBlobs);
     };
     mediaRecorder.ondataavailable = handleDataAvailable;
     mediaRecorder.start();
     console.log("MediaRecorder started", mediaRecorder);
-    console.log("Created MediaRecorder", mediaRecorder);
   };
 
   const stopRecording = () => {
     mediaRecorder.stop();
+  };
+
+  const sendVideoToFlask = () => {
+    console.log("Sending video to flask");
+    // why recordedBlobs is undefined here ?
+    // maybe because it is async ?
+    console.log("Recorded Blobs: ", recordedBlobs[0]);
     var data = new FormData();
-    data.append(
-      "video",
-      new Blob(recordedBlobs, { type: "video/webm" }),
-      "video"
-    );
+    data.append("video", recordedBlobs[0], "video");
     const obj = { hello: "world" };
     const blob = new Blob([JSON.stringify(obj, null, 2)], {
       type: "application/json",
     });
     data.append("pot", blob, "pot");
-    fetch("http://127.0.0.1:5000/video_feed", {
+    console.log("DATA ", data);
+    // we will send the video to a flask server
+    fetch("http://127.0.0.1:5000/upload_vod", {
       method: "POST",
       body: data,
+    }).then((response) => {
+      console.log("Response: ", response);
+      setGotResponse(true);
     });
-    setGotResponse(true);
   };
 
   const handleDataAvailable = (event) => {
@@ -125,6 +135,21 @@ export default function RecordingP() {
           >
             Download Record
           </Button>
+          <Button
+            size="large"
+            className="Rectangle"
+            variant="contained"
+            color={status ? "error" : "success"}
+            style={{
+              fontFamily: "Merriweather",
+              borderRadius: "10px",
+            }}
+            onClick={() => {
+              sendVideoToFlask();
+            }}
+          >
+            send Record
+          </Button>
         </View>
       ) : null}
       <Container
@@ -150,13 +175,17 @@ export default function RecordingP() {
           autoPlay
           muted
         ></video>
-        {gotResponse ? (
-          <img
-            src="http://127.0.0.1:5000/video_feed"
-            width="500px"
-            height="500px"
-          />
-        ) : null}
+        {gotResponse & boola // allow only once
+          ? (console.log(boola),
+            (
+              <img
+                src="http://127.0.0.1:5000/video_feed"
+                loading="eager" // load the image as soon as possible
+                width="500px"
+                height="500px"
+              />
+            ))
+          : null}
       </Container>
       {!gotStream ? (
         <>
