@@ -4,12 +4,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { createRef } from "react";
 import { View } from "react-native";
 import { call_analysis, start } from "./store/actions/actions";
+import Plot from "react-plotly.js";
 let mediaRecorder;
 let recordedBlobs = [];
 export default function RecordingP() {
   const [status, setStatus] = useState(true);
   const [gotStream, setGotStream] = useState(false);
-  const [gotResponse, setGotResponse] = useState(false);
+  const [gotResponse, setGotResponse] = useState({ status: false, data: [] });
+
   const dispatch = useDispatch();
   const { _, __ } = useSelector((state) => state.MediaReducer);
   const phoneSTREAM = createRef();
@@ -38,7 +40,7 @@ export default function RecordingP() {
     mediaRecorder.stop();
   };
 
-  const sendVideoToFlask = () => {
+  const sendVideoToFlask = async () => {
     console.log("Sending video to flask");
     // why recordedBlobs is undefined here ?
     // maybe because it is async ?
@@ -57,7 +59,16 @@ export default function RecordingP() {
       body: data,
     }).then((response) => {
       console.log("Response: ", response);
-      setGotResponse(true);
+
+      fetch("http://127.0.0.1:5000/get_analysis", {
+        method: "GET",
+      }).then(async (response) => {
+        //hggggggggggggggggjjjjjjkiconsole.log("Response2: ", response.json());
+        const estimates = await response.json();
+        console.log("Estimates: ", estimates);
+        console.log("Response2: ", estimates.Estimates);
+        setGotResponse({ status: true, data: estimates.Estimates });
+      });
     });
   };
 
@@ -160,7 +171,7 @@ export default function RecordingP() {
           justifyContent: "center",
           alignItems: "center",
           alightContent: "center",
-          flexDirection: "row",
+          flexDirection: "column",
         }}
       >
         <video
@@ -175,15 +186,65 @@ export default function RecordingP() {
           autoPlay
           muted
         ></video>
-        {gotResponse & boola // allow only once
+        {gotResponse.status & boola // allow only once
           ? (console.log(boola),
             (
-              <img
-                src="http://127.0.0.1:5000/video_feed"
-                loading="eager" // load the image as soon as possible
-                width="500px"
-                height="500px"
-              />
+              <Container
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  alightContent: "center",
+                  flexDirection: "row",
+                }}
+              >
+                <Plot
+                  data={[
+                    {
+                      x: gotResponse.data.map((item) => item[0]),
+                      y: gotResponse.data.map((item) => item[1]),
+                      z: gotResponse.data.map((item) => item[2]),
+                      type: "scatter3d",
+                      mode: "markers",
+                      // make it such that the color dims as the index increases
+                      marker: {
+                        color: gotResponse.data.map((item, index) => index),
+                        size: 12,
+                        line: {
+                          color: "rgba(217, 217, 217, 0.14)",
+                          width: 0.5,
+                        },
+                        opacity: 0.8,
+                      },
+                    },
+                  ]}
+                  layout={{ width: 500, height: 500, title: "3D Plot" }}
+                />
+                <Plot
+                  data={[
+                    {
+                      x: gotResponse.data.map((item) => item[0]),
+                      y: gotResponse.data.map((item) => item[2]),
+                      // 2d plot
+                      type: "scatter",
+                      mode: "markers",
+                      // make it such that the color dims as the index increases
+                      marker: {
+                        color: gotResponse.data.map((item, index) => index),
+                        size: 12,
+                        line: {
+                          color: "rgba(217, 217, 217, 0.14)",
+                          width: 0.5,
+                        },
+                        opacity: 0.8,
+                      },
+                    },
+                  ]}
+                  layout={{ width: 500, height: 500, title: "2D Plot" }}
+                />
+              </Container>
             ))
           : null}
       </Container>

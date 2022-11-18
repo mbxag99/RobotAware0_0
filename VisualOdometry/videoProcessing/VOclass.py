@@ -9,9 +9,7 @@ import pytransform3d.transformations as pt
 import pytransform3d.trajectories as ptr
 import pytransform3d.rotations as pr
 import pytransform3d.camera as pc
-import mpld3
 from frame import Frame
-from funcs import *
 
 
 
@@ -40,6 +38,7 @@ class VisualOdometry:
         self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING)
         self.exposed_Img = None
         self.can_expose = True
+        self.out_estimated_path = []
 
     def draw_2D(self):
         take_every_th_camera_pose = 2
@@ -70,8 +69,6 @@ class VisualOdometry:
                         sensor_size=image_size, c=shade * np.array([1., 0., 0.]))
             shade *= 0.93
         # save the plot as gif file
-        mpld3.save_html(fig, "plot.html")
-        mpld3.save_json(fig, 'plot.json')
         plt.show()
 
     def start_Processing(self):
@@ -82,9 +79,11 @@ class VisualOdometry:
             H = int((cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))#1080/2
         while cap.isOpened():
             ret, frame = cap.read()
+            if not ret:
+              break
             if ret and frame_count % 5 == 0:
              img = cv2.resize(frame, (W, H))
-             self.can_expose = False
+             #self.can_expose = False
              transf = self.process(img)
              if transf is not None:
               self.cur_pose = self.cur_pose @ transf
@@ -98,14 +97,12 @@ class VisualOdometry:
               self.prevFrame.pose = hom_camera_pose
               self.camera_pose_list.append(hom_camera_pose)
               self.estimated_path.append((self.cur_pose[0, 3], self.cur_pose[2, 3]))# x , z
+              self.out_estimated_path.append((self.cur_pose[0, 3], self.cur_pose[1, 3], self.cur_pose[2, 3]))
               estimated_camera_pose_x, estimated_camera_pose_y, estimated_camera_pose_z = self.cur_pose[0, 3],self.cur_pose[1,3], self.cur_pose[2, 3]
               print("Estimated camera pose: ({},{},{})".format(estimated_camera_pose_x,estimated_camera_pose_y, estimated_camera_pose_z))
             frame_count += 1
-            # break when I type in the console 'q' or in the video window I press 'q'
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-              break
         cap.release()
-
+        print("Done")
         #self.draw_3D()
         #self.draw_2D()
         return
@@ -146,7 +143,7 @@ class VisualOdometry:
             print("Number of good matches: ", len(good[inliers]))
         self.prevFrame = Frame(kps, des, img)
         self.exposed_Img = img
-        self.can_expose = True
+        #self.can_expose = True
         #cv2.imshow('img', img)
         cv2.waitKey(1) 
         return transf

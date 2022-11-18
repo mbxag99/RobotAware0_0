@@ -1,6 +1,6 @@
 import io
 import os
-from flask import Flask,render_template, Response , request
+from flask import Flask,render_template, Response , request,jsonify
 from flask_cors import CORS
 from wand.image import Image 
 import matplotlib.pyplot as plt
@@ -34,10 +34,12 @@ def upload():
 
 
 
-@app.route('/video_feed', methods=['GET'])
+@app.route('/get_analysis', methods=['GET'])
 def video_feed():
-    print("video feed")
-    return Response(start_processing(), mimetype='multipart/x-mixed-replace; boundary=frame')   
+    print("start processingsss")
+    VO = VisualOdometry()
+    VO.start_Processing()
+    return jsonify({'Estimates': VO.out_estimated_path})
 
 '''
 
@@ -61,17 +63,22 @@ def get_frames():
                     b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
 
 '''
+'''
 def start_processing():
     print("start processingsss")
     VO = VisualOdometry()
-    t = threading.Thread(target=VO.start_Processing)
-    t.start()
-    while True:
-        img = VO.get_image()
-        if VO.can_expose and img is not None:
-            ret, buffer = cv2.imencode('.jpg', img)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
+    VO.start_Processing()
+    return VO.camera_pose_list , VO.estimated_path
+    #t = threading.Thread(target=VO.start_Processing)
+    #t.start()
+    #counter = 0
+    #while True:
+    #        img = VO.get_image()
+    #        if img is not None and counter % 10 == 0:
+    #            ret, buffer = cv2.imencode('.jpg', img)
+    #            frame = buffer.tobytes()
+    #            yield (b'--frame\r\n'
+    #                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+    #            counter += 1
+'''
 
