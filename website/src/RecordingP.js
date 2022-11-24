@@ -25,15 +25,15 @@ export default function RecordingP() {
     //recordedBlobs = [];
     mediaRecorder = new MediaRecorder(phoneSTREAM.current.srcObject);
     mediaRecorder.onstop = (event) => {
-      console.log("Recorder stopped: ", event);
-      console.log("Media recorded state: ", mediaRecorder.state);
-      console.log("Recorded Blobs after stop: ", recordedBlobs);
+      console.log("Processing stopped: ", event);
+      console.log("State: ", mediaRecorder.state);
+      console.log("Processed Blobs after stop: ", recordedBlobs);
       //sendVideoToFlask(recordedBlobs[0]);
       //console.log("Recorded Blobs: ", recordedBlobs);
     };
     mediaRecorder.ondataavailable = handleDataAvailable;
     mediaRecorder.start();
-    console.log("MediaRecorder started", mediaRecorder);
+    console.log("Processing started", mediaRecorder);
   };
 
   const stopRecording = () => {

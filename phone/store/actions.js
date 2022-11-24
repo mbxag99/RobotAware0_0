@@ -23,7 +23,7 @@ manager.onStateChange((state) => {
     console.log("BLE is powered on");
   }
 }, true);*/
-const API_URI = `http://192.168.86.237:3001/`;
+const API_URI = `http://10.0.0.16:3001/`;
 let socket = io(`${API_URI}`, { forceNew: true });
 socket.on("error", (error) => console.log(error + `socket error`));
 

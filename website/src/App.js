@@ -8,9 +8,10 @@ import {
   Paper,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRef } from "react";
 import RecordingP from "./RecordingP.js";
+import AutoCar from "./AutoCar";
 
 let mediaRecorder;
 let recordedBlobs;
@@ -19,7 +20,8 @@ function App() {
   const dispatch = useDispatch();
   const { _, __ } = useSelector((state) => state.MediaReducer);
   const phoneSTREAM = createRef();
-  const [st, setSt] = useState(false);
+  const [st, setSt] = useState(0);
+
   /* const RecordMedia = () => {
     recordedBlobs = [];
     mediaRecorder = new MediaRecorder(phoneSTREAM.current.srcObject);
@@ -59,9 +61,9 @@ function App() {
     }, 100);
   };*/
 
-  return st ? (
+  return st == 1 ? (
     <RecordingP />
-  ) : (
+  ) : st == 0 ? (
     <Container
       maxWidth="lg"
       style={{
@@ -90,12 +92,29 @@ function App() {
           borderRadius: "10px",
         }}
         onClick={() => {
-          setSt(true);
+          setSt(1);
         }}
       >
-        Start video
+        Monocular Odometry
+      </Button>
+      <Button
+        size="large"
+        className="Rectangle"
+        variant="contained"
+        color="success"
+        style={{
+          fontFamily: "Merriweather",
+          borderRadius: "10px",
+        }}
+        onClick={() => {
+          setSt(2);
+        }}
+      >
+        Autonomous Car
       </Button>
     </Container>
+  ) : (
+    <AutoCar />
   );
 }
 
