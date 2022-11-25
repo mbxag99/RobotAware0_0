@@ -8,6 +8,7 @@ import Plot from "react-plotly.js";
 import { io } from "socket.io-client";
 let mediaRecorder;
 let socket_to_ac = io("http://127.0.0.1:5000", { forceNew: true });
+//let interval;
 export default function AutoCar() {
   const [status, setStatus] = useState(true);
   const [gotStream, setGotStream] = useState(false);
@@ -15,84 +16,59 @@ export default function AutoCar() {
   const dispatch = useDispatch();
   const phoneSTREAM = createRef();
   const [boola, setBoola] = useState(true);
+  const [Start, setStart] = useState(false);
   useEffect(() => {
     dispatch(start(phoneSTREAM, setGotStream));
   }, []);
+
+  useEffect(() => {
+    // this will excuted every 1 second
+    const interval = setInterval(RecordMedia, 5000);
+    return () => clearInterval(interval);
+  }, [gotStream]);
+
   // when we receive a stream
   const RecordMedia = () => {
     //recordedBlobs = [];
+    if (!gotStream) return;
+    console.log("recording");
     mediaRecorder = new MediaRecorder(phoneSTREAM.current.srcObject);
     mediaRecorder.onstop = (event) => {
       console.log("Processing stopped: ", event);
       console.log("State: ", mediaRecorder.state);
-      //sendVideoToFlask(recordedBlobs[0]);
-      //console.log("Recorded Blobs: ", recordedBlobs);
     };
+
+    mediaRecorder.onerror = (event) => {
+      console.log("Error: ", event);
+    };
+
     mediaRecorder.ondataavailable = handleDataAvailable;
-    mediaRecorder.start(5000);
+    setTimeout(() => {
+      mediaRecorder.stop();
+    }, 2000);
+    mediaRecorder.start();
     console.log("Processing started", mediaRecorder);
   };
 
   const stopRecording = () => {
-    mediaRecorder.stop();
+    /*mediaRecorder.stop();
+   clearInterval(interval);
+    setStart(false);*/
   };
-
-  /*const sendVideoToFlask = async () => {
-    console.log("Sending video to flask");
-    // why recordedBlobs is undefined here ?
-    // maybe because it is async ?
-    console.log("Recorded Blobs: ", recordedBlobs[0]);
-    var data = new FormData();
-    data.append("video", recordedBlobs[0], "video");
-    const obj = { hello: "world" };
-    const blob = new Blob([JSON.stringify(obj, null, 2)], {
-      type: "application/json",
-    });
-    data.append("pot", blob, "pot");
-    console.log("DATA ", data);
-    // we will send the video to a flask server
-    fetch("http://127.0.0.1:5000/upload_vod", {
-      method: "POST",
-      body: data,
-    }).then((response) => {
-      console.log("Response: ", response);
-
-      fetch("http://127.0.0.1:5000/get_analysis", {
-        method: "GET",
-      }).then(async (response) => {
-        //hggggggggggggggggjjjjjjkiconsole.log("Response2: ", response.json());
-        const estimates = await response.json();
-        console.log("Estimates: ", estimates);
-        console.log("Response2: ", estimates.Estimates);
-        setGotResponse({ status: true, data: estimates.Estimates });
-      });
-    });
-  };*/
+  const startRecording = () => {
+    /* setStart(true);
+    interval = setInterval(() => {
+      console.log("This will run every second!");
+      RecordMedia();
+    }, 2000);*/
+  };
 
   const handleDataAvailable = (event) => {
     console.log("handleDataAvailable", event);
     if (event.data && event.data.size > 0) {
+      console.log("handleData----Available", event.data);
       const recordedBlob = event.data;
-      /*const DataForm = new FormData();
-      DataForm.append("video_slice", recordedBlob, "video_slice");
-      fetch("http://127.0.0.1:5000/video_slice", {
-        method: "POST",
-        body: DataForm,
-      }).then((response) => {
-        console.log("Response: ", response);
-      });*/
       socket_to_ac.emit("video_slice", recordedBlob);
-      /*var reader = new FileReader();
-      reader.readAsDataURL(recordedBlob);
-      reader.onloadend = () => {
-        const base64data = reader.result;
-        //console.log(base64data);
-        socket_to_ac.emit("video_slice", base64data);
-        // in the flask server we will receive the base64data
-        // and we will write this:
-        // with open("video.mp4", "wb") as f:
-        // f.write(base64.b64decode(base64data))
-      };*/
     }
   };
 
@@ -128,7 +104,7 @@ export default function AutoCar() {
               borderRadius: "10px",
             }}
             onClick={() => {
-              status ? RecordMedia() : stopRecording();
+              status ? startRecording() : stopRecording();
               setStatus(!status);
             }}
           >
