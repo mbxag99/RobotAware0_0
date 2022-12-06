@@ -10,7 +10,7 @@
       "request": "launch",
       "module": "flask",
       "env": {
-        "FLASK_APP": "VisualOdometry/videoProcessing/main.py",
+        "FLASK_APP": "VisualOdometry/videoProcessing/main_vo.py",
         "FLASK_ENV": "development",
         "FLASK_DEBUG": "1"
       },

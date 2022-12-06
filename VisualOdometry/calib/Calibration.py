@@ -72,7 +72,7 @@ img = cv.imread('C:/Users/windows 10/Desktop/superP/VisualOdometry/calib/pic2.jp
 h,  w = img.shape[:2]
 newCameraMatrix, roi = cv.getOptimalNewCameraMatrix(cameraMatrix, dist, (w,h), 1, (w,h))
 
-
+print("newCameraMatrix = ", newCameraMatrix)
 
 # Undistort
 dst = cv.undistort(img, cameraMatrix, dist, None, newCameraMatrix)

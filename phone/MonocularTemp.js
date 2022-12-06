@@ -1,4 +1,4 @@
-import { Icon } from "@rneui/base";
+import { Icon, patchWebProps } from "@rneui/base";
 import React, { createRef, useEffect, useRef, useState } from "react";
 import {
   StatusBar,
@@ -12,6 +12,8 @@ import { mediaDevices } from "react-native-webrtc";
 import { useDispatch, useSelector } from "react-redux";
 import { io } from "socket.io-client";
 import { accept, start, stopS } from "./store/actions";
+
+import RNBluetoothClassic from "react-native-bluetooth-classic";
 // opencv js
 let media_Recorder;
 //let socket_to_ac = io("http://127.0.0.1:5000", { forceNew: true });
@@ -85,6 +87,7 @@ export default function MonocularTemp({ setPage }) {
   };*/
   const myFUN = (stopped) => {
     console.log("myFUN " + stopped);
+    console.log(RNBluetoothClassic.isBluetoothEnabled());
     try {
       let isFront = false;
       mediaDevices.enumerateDevices().then((sourceInfos) => {

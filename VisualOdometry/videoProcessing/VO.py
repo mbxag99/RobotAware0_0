@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 from skimage.measure import ransac
 from skimage.transform import FundamentalMatrixTransform , EssentialMatrixTransform
-
+import pickle
 import pytransform3d.transformations as pt
 import pytransform3d.trajectories as ptr
 import pytransform3d.rotations as pr
 import pytransform3d.camera as pc
+import mpld3
 from frame import Frame
 from funcs import *
 
@@ -43,7 +44,7 @@ def get_pose(pts,K,E,PP):
         #E, mask = cv2.findEssentialMat(pts[:,0], pts[:,1], K)
         # Decompose the Essential matrix into R and t
 
-        R, t = decomp_essential_mat_old(PP,K,E,pts[:,0],pts[:,1])#decomp_essential_mat(E, K, pts)
+        R, t = decomp_essential_mat_new(PP,K,E,pts[:,0],pts[:,1])#decomp_essential_mat(E, K, pts)
         #if np.linalg.norm(t) < 1.0: ##************ 80/50 threshold
         #print(np.linalg.norm(t))
         #    return None
@@ -51,42 +52,6 @@ def get_pose(pts,K,E,PP):
         transformation_matrix = _form_transf(R, np.squeeze(t))
         #print(transformation_matrix)
         return transformation_matrix
-
-def matchFrames(img1,img2):
-        # Find the keypoints and descriptors with ORB
-        kp1, des1 = orb.detectAndCompute(img1, None)
-        kp2, des2 = orb.detectAndCompute(img2, None)
-        # Find matches
-        if len(kp1) > 6 and len(kp2) > 6:
-            matches = flann.knnMatch(des1, des2, k=2)
-
-            # Find the matches there do not have a to high distance
-            good_matches = []
-            try:
-                for m, n in matches:
-                    if m.distance < 0.5 * n.distance:
-                        good_matches.append(m)
-            except ValueError:
-                pass
-            
-            print("Number of matches: ", len(good_matches))
-            # Draw matches
-            img_matches = np.empty((max(img1.shape[0], img2.shape[0]), img1.shape[1] + img2.shape[1], 3), dtype=np.uint8)
-            #cv2.drawMatches(img1, kp1, img2, kp2, good_matches, img_matches, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-    
-            #cv2.imshow('Good Matches', img_matches)
-            #cv2.waitKey(50)
-            
-            # Get the image points form the good matches
-            #q1 = [kp1[m.queryIdx] for m in good_matches]
-            #q2 = [kp2[m.trainIdx] for m in good_matches]
-            q1 = np.float32([kp1[m.queryIdx].pt for m in good_matches])
-            q2 = np.float32([kp2[m.trainIdx].pt for m in good_matches])
-        
-            return q1, q2
-        else:
-            return None, None
-
 
 def extract_frame(img,prevFrame,K,Kinv,PP):
     feats = cv2.goodFeaturesToTrack(np.mean(img,axis=2).astype(np.uint8), 3000, qualityLevel=0.01, minDistance=3)
@@ -101,7 +66,7 @@ def extract_frame(img,prevFrame,K,Kinv,PP):
         matches = matcher.knnMatch(des, prevFrame.des,k=2)
         good = []
         for m,n in matches:
-         if m.distance < 0.6*n.distance:
+         if m.distance < 0.7*n.distance:
           #if m.distance < 32:
            kp1 = kps[m.queryIdx].pt
            kp2 = prevFrame.kps[m.trainIdx].pt
@@ -214,7 +179,7 @@ def decomp_essential_mat(E,K, pts):
             # print(t)
             return R2, np.ndarray.flatten(t) 
 
-def decomp_essential_mat_old(PP,K, E, q1, q2):
+def decomp_essential_mat_new(PP,K, E, q1, q2):
         def sum_z_cal_relative_scale(PP,K,R, t):
             # Get the transformation matrix
             T = _form_transf(R, t)
@@ -274,7 +239,7 @@ def create_video(filename, width, height, fps=30):
 
 
 if __name__ == "__main__":
-    cap = cv2.VideoCapture('vods/SUper.mp4')
+    cap = cv2.VideoCapture('recieved.webm')
     if cap.isOpened():
       W = int((cap.get(cv2.CAP_PROP_FRAME_WIDTH)))#1920/2
       H = int((cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))#1080/2
@@ -320,7 +285,7 @@ if __name__ == "__main__":
     #out = create_video('pop.mp4',W,H)
     while cap.isOpened():
         ret, frame = cap.read()
-        if ret and frame_count % 8 == 0:
+        if ret and frame_count % 5 == 0:
             img = cv2.resize(frame, (W, H))
             #frames.append(img)
             prevFrame,transf =  extract_frame(img,prevFrame,K,Kinv,PP)
@@ -351,10 +316,10 @@ if __name__ == "__main__":
     cap.release()
 
 
-image_size = np.array([540, 960])
+image_size = np.array([960, 540])
 #image_size = np.array([1920, 1080])
 
-plt.figure()
+fig = plt.figure()
 #ax = pt.plot_transform()
 ax = plt.axes(projection='3d')
 ax.set_xlabel('X')
@@ -372,10 +337,11 @@ for i in key_frames_indices:
     pc.plot_camera(ax, K, camera_pose_poses[i],
                    sensor_size=image_size, c=shade * np.array([1., 0., 0.]))
     shade *= 0.93
-                   
-
-
+# save the plot as gif file
+mpld3.save_html(fig, "plot.html")
+mpld3.save_json(fig, 'plot.json')
 plt.show()
+
 
 take_every_th_camera_pose = 2
 

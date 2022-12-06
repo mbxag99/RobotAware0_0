@@ -16,16 +16,30 @@ export default function AutoCar() {
   const dispatch = useDispatch();
   const phoneSTREAM = createRef();
   const [boola, setBoola] = useState(true);
-  const [Start, setStart] = useState(false);
+  const [Pause, setPause] = useState(false);
   useEffect(() => {
     dispatch(start(phoneSTREAM, setGotStream));
   }, []);
 
   useEffect(() => {
     // this will excuted every 1 second
-    const interval = setInterval(RecordMedia, 5000);
+    const interval = setInterval(() => {
+      if (!Pause) {
+        RecordMedia();
+      }
+    }, 5000);
     return () => clearInterval(interval);
   }, [gotStream]);
+
+  socket_to_ac.on("pause", () => {
+    console.log("pause");
+    setPause(true);
+  });
+
+  socket_to_ac.on("resume", () => {
+    console.log("resume");
+    setPause(false);
+  });
 
   // when we receive a stream
   const RecordMedia = () => {
@@ -45,7 +59,7 @@ export default function AutoCar() {
     mediaRecorder.ondataavailable = handleDataAvailable;
     setTimeout(() => {
       mediaRecorder.stop();
-    }, 2000);
+    }, 3000);
     mediaRecorder.start();
     console.log("Processing started", mediaRecorder);
   };
