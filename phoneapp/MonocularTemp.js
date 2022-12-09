@@ -13,16 +13,9 @@ import {useDispatch, useSelector} from 'react-redux';
 import {action} from './actionfigure';
 import RNBluetoothClassic from 'react-native-bluetooth-classic';
 import {io} from 'socket.io-client';
-import {
-  RTCPeerConnection,
-  RTCIceCandidate,
-  RTCSessionDescription,
-} from 'react-native-webrtc';
-// opencv js
-//let socket_to_ac = io("http://127.0.0.1:5000", { forceNew: true });
-/*let socket = io(`http://10.0.0.16:3001/`, {forceNew: true});
-console.log(socket);
-let pc = new RTCPeerConnection();*/
+let socket_to_ac = io(`http://10.0.0.16:5000`, {
+  transports: ['websocket'],
+});
 let actiony = new action();
 export default function MonocularTemp() {
   const [status, setStatus] = useState(0);
@@ -31,16 +24,29 @@ export default function MonocularTemp() {
   useEffect(() => {
     myFUN(false);
     //console.log('pitof');
-    //funcc();
   }, []);
 
-  funcc = async () => {
-    console.log(await RNBluetoothClassic.isBluetoothEnabled());
-    console.log(await RNBluetoothClassic.getBondedDevices());
-    console.log(await RNBluetoothClassic.getConnectedDevices());
-    await RNBluetoothClassic.connectToDevice('98:D3:31:20:68:84');
-    while (true) {
-      await RNBluetoothClassic.writeToDevice('98:D3:31:20:68:84', 'F');
+  const funcc = () => {
+    actiony.set_listeners_for_ac(RNBluetoothClassic);
+  };
+
+  const another_func = async () => {
+    try {
+      //console.log('dassadasdw222 ', socket.connected);
+      console.log('Sytttt ', socket_to_ac.connected);
+      //console.log(await RNBluetoothClassic.isBluetoothEnabled());
+      //console.log(await RNBluetoothClassic.getBondedDevices());
+      //console.log(await RNBluetoothClassic.getConnectedDevices());
+      await RNBluetoothClassic.connectToDevice('98:D3:31:20:68:84');
+      socket_to_ac.on('command_to_phone', async command => {
+        console.log('commnad ' + command);
+        await RNBluetoothClassic.writeToDevice('98:D3:31:20:68:84', command);
+        //socket_to_ac.emit('phone_sent_to_robot');
+        socket_to_ac.emit('phone');
+      });
+      socket_to_ac.emit('phone');
+    } catch (error) {
+      console.log('errrrrr ', error);
     }
   };
   const myFUN = stopped => {
@@ -64,21 +70,11 @@ export default function MonocularTemp() {
             audio: true,
             video: {
               deviceId: videoSourceId,
-              /* facingMode: isFront ? "user" : "environment",
-              optional: videoSourceId ? [{ sourceId: videoSourceId }] : [],*/
             },
           })
           .then(stream => {
-            // console.log('Stream ' + stream.getTracks());
-            //     setMyStream(stream);
-            //const track = mediaStream.getVideoTracks()[0];
-            //setStream(stream);
-            //phoneSTREAM.current.srcObject = stream;
-            //  console.log("stream " + phoneSTREAM.current.srcObject);
-            // dispatch(start(stream, setStatus, stopped));
-            //start_streaming(stream, setStatus, stopped);
-            // console.log('Stream Tracks ' + stream.getTracks());
             actiony.start_streaming(stream, setStatus, stopped);
+            another_func();
           })
           .catch(error => {
             console.log('erereerddd ' + error);

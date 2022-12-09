@@ -11,8 +11,24 @@ export class action {
     console.log('ssssssssssssssss');
     console.log('++++++++++++');
     this.socket = io(`http://10.0.0.16:3001/`, {forceNew: true});
+    this.socket_to_ac = 0;
+    /* io(`http://10.0.0.16:5000`, {
+      transports: ['websocket'],
+    }); */
     console.log('for every piece');
     this.socket.on('error', error => console.log(error + `socket error`));
+    /* this.socket_to_ac.on('error', error =>
+      console.log(`socket error ` + error),
+    );
+    this.socket_to_ac.on('connect_error', err => {
+      console.log(`connect_error due to ${err}`);
+    });
+    this.socket_to_ac.on('connect', ss => {
+      console.log(`cCOONNECTION TO AC`);
+    });*/
+    this.socket.on('connect', ss => {
+      console.log(`cCOONNECTION SO`);
+    });
     this.pc = new RTCPeerConnection();
   }
 
@@ -91,6 +107,26 @@ export class action {
     if (this.pc.signalingState == 'have-remote-offer') {
       console.log('ACCEPT');
       this.createAnswer();
+    }
+  }
+
+  set_listeners_for_ac(RNBluetoothClassic) {
+    try {
+      console.log('dassadasdw222 ', this.socket.connected);
+      console.log('Sytttt ', this.socket_to_ac.connected);
+      //console.log(await RNBluetoothClassic.isBluetoothEnabled());
+      //console.log(await RNBluetoothClassic.getBondedDevices());
+      //console.log(await RNBluetoothClassic.getConnectedDevices());
+      RNBluetoothClassic.connectToDevice('98:D3:31:20:68:84');
+      this.socket_to_ac.on('command_to_phone', command => {
+        console.log('commnad ' + command);
+        RNBluetoothClassic.writeToDevice('98:D3:31:20:68:84', command);
+        //socket_to_ac.emit('phone_sent_to_robot');
+        this.socket_to_ac.emit('phone');
+      });
+      this.socket_to_ac.emit('phone');
+    } catch (error) {
+      console.log('errrrrr ', error);
     }
   }
 }
