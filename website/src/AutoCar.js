@@ -7,7 +7,7 @@ import { call_analysis, start } from "./store/actions/actions";
 import Plot from "react-plotly.js";
 import { io } from "socket.io-client";
 let mediaRecorder;
-let socket_to_ac = io("http://127.0.0.1:5000", { forceNew: true });
+socket_to_ac = io(`http://10.0.0.16:5000`, { forceNew: true });
 //let interval;
 export default function AutoCar() {
   const [status, setStatus] = useState(true);
@@ -27,7 +27,7 @@ export default function AutoCar() {
       if (!Pause) {
         RecordMedia();
       }
-    }, 5000);
+    }, 1500);
     return () => clearInterval(interval);
   }, [gotStream]);
 
@@ -59,7 +59,7 @@ export default function AutoCar() {
     mediaRecorder.ondataavailable = handleDataAvailable;
     setTimeout(() => {
       mediaRecorder.stop();
-    }, 3000);
+    }, 1000);
     mediaRecorder.start();
     console.log("Processing started", mediaRecorder);
   };
