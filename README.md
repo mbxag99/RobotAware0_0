@@ -19,11 +19,7 @@ Visual Odomertry:
 
 Autonomous Car:
 
+![image](https://user-images.githubusercontent.com/67237610/209582014-33dccd34-50a4-4a81-8090-d0792b58888a.png)
 
 
-https://user-images.githubusercontent.com/67237610/209581721-a67f5d5b-e2f3-400f-8625-fa728f36855f.mp4
-
-
-https://user-images.githubusercontent.com/67237610/209581677-9659a0fa-7c4a-49f8-8133-b1841946a29b.mp4
-
-
+![image](https://user-images.githubusercontent.com/67237610/209582077-f6812605-22cb-4383-a871-490729527219.png)
