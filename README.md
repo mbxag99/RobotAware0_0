@@ -1,4 +1,8 @@
 # Robot AWARE 0_0
+Slideshow:
+
+[View PDF](https://github.com/mbxag99/RobotAware0_0/blob/master/Slideshow-VOAUTO.pdf)
+
 ReactJs (for website)
 ReactNative (for phone app)
 NodeJS (server)
